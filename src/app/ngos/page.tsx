@@ -1,0 +1,390 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+
+interface NGO {
+  ngo_id: string;
+  name: string;
+  focus_areas: string;
+  contact_person: string;
+  phone: string;
+  email: string;
+  registration_number: string;
+  start_date: string;
+  status: string;
+  notes: string;
+}
+
+const FOCUS_OPTIONS = ["Women", "Children", "Disabled", "Elderly"];
+const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
+
+export default function NGOsPage() {
+  const [ngos, setNgos] = useState<NGO[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    focus_areas: [] as string[],
+    contact_person: "",
+    phone: "",
+    email: "",
+    registration_number: "",
+    start_date: "",
+    status: "Active",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const fetchNgos = () => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (status) params.set("status", status);
+    fetch(`/api/ngos?${params.toString()}`)
+      .then((r) => r.json())
+      .then(setNgos)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchNgos();
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(fetchNgos, 300);
+    return () => clearTimeout(timer);
+  }, [search, status]);
+
+  const toggleFocus = (area: string) => {
+    setForm((prev) => ({
+      ...prev,
+      focus_areas: prev.focus_areas.includes(area)
+        ? prev.focus_areas.filter((a) => a !== area)
+        : [...prev.focus_areas, area],
+    }));
+  };
+
+  const validate = () => {
+    const errs: Record<string, string> = {};
+    if (!form.name.trim()) errs.name = "Name is required";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/ngos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          focus_areas: form.focus_areas.join(", "),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create");
+      setShowModal(false);
+      setForm({
+        name: "",
+        focus_areas: [],
+        contact_person: "",
+        phone: "",
+        email: "",
+        registration_number: "",
+        start_date: "",
+        status: "Active",
+      });
+      fetchNgos();
+    } catch {
+      alert("Failed to create NGO");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const statusBadge = (s: string) => {
+    const colors: Record<string, string> = {
+      Active: "bg-green-100 text-green-800",
+      Inactive: "bg-gray-100 text-gray-800",
+      Suspended: "bg-red-100 text-red-800",
+    };
+    return (
+      <span
+        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+          colors[s] || "bg-gray-100 text-gray-800"
+        }`}
+      >
+        {s}
+      </span>
+    );
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">NGOs</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+        >
+          Add NGO
+        </button>
+      </div>
+
+      <div className="flex items-center gap-4 mb-4 flex-wrap">
+        <input
+          type="text"
+          placeholder="Search by name or focus areas..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border border-gray-300 rounded-lg px-4 py-2 w-full max-w-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Statuses</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Name
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Focus Areas
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Status
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-900" />
+                      Loading...
+                    </div>
+                  </td>
+                </tr>
+              ) : ngos.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                    No NGOs found.
+                  </td>
+                </tr>
+              ) : (
+                ngos.map((ngo) => (
+                  <tr
+                    key={ngo.ngo_id}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {ngo.name}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {ngo.focus_areas}
+                    </td>
+                    <td className="px-4 py-3">{statusBadge(ngo.status)}</td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/ngos/${ngo.ngo_id}`}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4">
+            <div className="flex items-center justify-between px-6 pt-6 pb-2">
+              <h2 className="text-lg font-bold text-gray-800">Add NGO</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm({ ...form, name: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Focus Areas
+                </label>
+                <div className="flex flex-wrap gap-4">
+                  {FOCUS_OPTIONS.map((area) => (
+                    <label
+                      key={area}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.focus_areas.includes(area)}
+                        onChange={() => toggleFocus(area)}
+                        className="accent-blue-900"
+                      />
+                      {area}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contact Person
+                </label>
+                <input
+                  type="text"
+                  value={form.contact_person}
+                  onChange={(e) =>
+                    setForm({ ...form, contact_person: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm({ ...form, phone: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm({ ...form, email: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Registration Number
+                </label>
+                <input
+                  type="text"
+                  value={form.registration_number}
+                  onChange={(e) =>
+                    setForm({ ...form, registration_number: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={form.start_date}
+                  onChange={(e) =>
+                    setForm({ ...form, start_date: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                >
+                  {submitting ? "Saving..." : "Add NGO"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
