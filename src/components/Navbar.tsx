@@ -97,49 +97,45 @@ export default function Navbar() {
 
       {/* Mobile Menu Overlay */}
       <div
-        className={`fixed inset-0 z-50 bg-blue-900 transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
+        className={`fixed inset-0 z-[60] transition-opacity duration-300 ${
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         } md:hidden`}
       >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-14 px-4 border-b border-blue-800">
-            <Link href="/" onClick={() => setIsOpen(false)} className="font-bold text-sm flex items-center gap-2">
-              <div className="w-10 h-10 overflow-hidden rounded-full flex items-center justify-center bg-white/10">
-                <Image 
-                  src={logo} 
-                  alt={"GWCSA logo"} 
-                  width={40}
-                  height={40}
-                  className="object-cover scale-[2.1]"
-                />
-              </div>
-              <span>GWCSA</span>
-            </Link>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 rounded text-blue-100 hover:bg-blue-800 focus:outline-none"
-              aria-label="Close menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="flex-1 px-4 py-8 space-y-4">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
+        <div className="absolute inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
+        <div
+          className={`absolute right-0 top-0 h-full w-64 bg-blue-900 shadow-xl transition-transform duration-300 ease-in-out ${
+            isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between h-14 px-4 border-b border-blue-800">
+              <span className="font-bold text-sm">Menu</span>
+              <button
                 onClick={() => setIsOpen(false)}
-                className={`block px-4 py-3 rounded-lg text-xl font-semibold transition-colors ${
-                  pathname === link.href
-                    ? "bg-blue-800 text-white"
-                    : "text-blue-100 hover:bg-blue-800"
-                }`}
+                className="p-2 rounded text-blue-100 hover:bg-blue-800 focus:outline-none"
+                aria-label="Close menu"
               >
-                {link.label}
-              </Link>
-            ))}
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 px-2 py-4 space-y-1">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    pathname === link.href
+                      ? "bg-blue-800 text-white"
+                      : "text-blue-100 hover:bg-blue-800"
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </div>
