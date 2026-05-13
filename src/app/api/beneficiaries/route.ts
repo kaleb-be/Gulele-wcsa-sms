@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
       category,
       sub_details,
       registered_by,
+      status,
       notes,
     } = body;
 

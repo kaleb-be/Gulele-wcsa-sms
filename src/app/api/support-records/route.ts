@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     );
 
     const duplicate = records.find(
-      (r: any) => r.ben_id === ben_id && r.service_id === service_id && r.status === "Active"
+      (r: any) => r.ben_id === ben_id && r.service_id === service_id && (r.status === "Active" || r.status === "Pending")
     );
 
     if (duplicate) {
@@ -99,21 +99,25 @@ export async function POST(request: NextRequest) {
     }
 
     const record_id = await generateId("REC", "support_records");
-    const start_date = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
+    const start_date_val = body.start_date || today;
+    
+    // Determine status: Pending if start_date is in the future
+    const status = start_date_val > today ? "Pending" : "Active";
 
     await appendRow("support_records", [
       record_id,
       ben_id,
       ngo_id,
       service_id,
-      start_date,
+      start_date_val,
       "",
-      "Active",
+      status,
       assigned_by || "",
       notes || "",
     ]);
 
-    return NextResponse.json({ record_id, start_date });
+    return NextResponse.json({ record_id, start_date: start_date_val, status });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to create support record" }, { status: 500 });
