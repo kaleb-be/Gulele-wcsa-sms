@@ -70,6 +70,7 @@ export default function AssignSupportPage() {
   const [ngoServiceLoading, setNgoServiceLoading] = useState(false);
 
   const [notes, setNotes] = useState("");
+  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [assignedBy, setAssignedBy] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -137,6 +138,7 @@ export default function AssignSupportPage() {
           service_id: selectedService.service_id,
           assigned_by: assignedBy,
           notes,
+          start_date: startDate,
         }),
       });
 
@@ -167,6 +169,7 @@ export default function AssignSupportPage() {
     setAvailableNgos([]);
     setMessage(null);
     setNotes("");
+    setStartDate(new Date().toISOString().split("T")[0]);
     setAssignedBy("");
     setSearch("");
     setBeneficiaries([]);
@@ -297,13 +300,16 @@ export default function AssignSupportPage() {
                     <th className="text-left px-4 py-3 font-medium text-gray-600">
                       Kebele
                     </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      Phone
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {benLoading ? (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         className="px-4 py-12 text-center text-gray-500"
                       >
                         <div className="flex items-center justify-center gap-2">
@@ -315,7 +321,7 @@ export default function AssignSupportPage() {
                   ) : beneficiaries.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={4}
                         className="px-4 py-8 text-center text-gray-500"
                       >
                         {search.trim()
@@ -341,6 +347,7 @@ export default function AssignSupportPage() {
                           {b.category}
                         </td>
                         <td className="px-4 py-3 text-gray-600">{b.kebele}</td>
+                        <td className="px-4 py-3 text-gray-600">{b.phone || "N/A"}</td>
                       </tr>
                     ))
                   )}
@@ -538,17 +545,30 @@ export default function AssignSupportPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Assigned By
-                </label>
-                <input
-                  type="text"
-                  value={assignedBy}
-                  onChange={(e) => setAssignedBy(e.target.value)}
-                  placeholder="Your name"
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full max-w-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Assigned By
+                  </label>
+                  <input
+                    type="text"
+                    value={assignedBy}
+                    onChange={(e) => setAssignedBy(e.target.value)}
+                    placeholder="Your name"
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>

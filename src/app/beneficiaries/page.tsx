@@ -60,7 +60,7 @@ export default function BeneficiariesPage() {
     phone: "",
     id_type: "Kebele ID",
     id_number: "",
-    category: "Women with children",
+    category: "",
     sub_details: "",
     notes: "",
   });
@@ -69,6 +69,7 @@ export default function BeneficiariesPage() {
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.full_name.trim()) errs.full_name = "Full name is required";
+    if (!form.category) errs.category = "Category is required";
     if (!form.id_number.trim()) errs.id_number = "ID number is required";
     if (form.id_type === "Fayda" && form.id_number.length !== 12)
       errs.id_number = "Fayda ID must be exactly 12 digits";
@@ -95,7 +96,7 @@ export default function BeneficiariesPage() {
         phone: "",
         id_type: "Kebele ID",
         id_number: "",
-        category: "Women with children",
+        category: "",
         sub_details: "",
         notes: "",
       });
@@ -412,25 +413,19 @@ export default function BeneficiariesPage() {
                 </label>
                 <select
                   value={form.category}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    updateField("category", val);
-                    if (val === "Women with children")
-                      updateField("sub_details", "");
-                    else if (val === "Disabled")
-                      updateField("sub_details", "");
-                    else if (val === "Elderly")
-                      updateField("sub_details", "");
-                    else updateField("sub_details", "");
-                  }}
+                  onChange={(e) => updateField("category", e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
+                  <option value="" disabled>Select Category</option>
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>
                       {c}
                     </option>
                   ))}
                 </select>
+                {errors.category && (
+                  <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                )}
               </div>
 
               <div>
