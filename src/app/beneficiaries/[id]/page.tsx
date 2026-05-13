@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import { Trash2, Printer, Pencil, X, Check } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Beneficiary {
   ben_id: string;
@@ -37,23 +42,66 @@ interface SupportRecord {
 
 export default function BeneficiaryProfile() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
-  const [beneficiary, setBeneficiary] = useState<Beneficiary | null>(null);
-  const [records, setRecords] = useState<SupportRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: beneficiary, error: benError, isLoading: benLoading, mutate: mutateBen } = useSWR<Beneficiary>(
+    id ? `/api/beneficiaries/${id}` : null,
+    fetcher
+  );
 
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      fetch(`/api/beneficiaries/${id}`).then((r) => r.json()),
-      fetch(`/api/support-records?ben_id=${id}`).then((r) => r.json()),
-    ]).then(([ben, recs]) => {
-      setBeneficiary(ben);
-      setRecords(recs);
-      setLoading(false);
+  const { data: recordsData, error: recError, isLoading: recLoading, mutate: mutateRecs } = useSWR<SupportRecord[]>(
+    id ? `/api/support-records?ben_id=${id}` : null,
+    fetcher
+  );
+
+  const records = Array.isArray(recordsData) ? recordsData : [];
+  const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Beneficiary>>({});
+
+  const startEdit = () => {
+    if (beneficiary) {
+      setEditForm(beneficiary);
+      setEditing(true);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const promise = fetch(`/api/beneficiaries/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editForm),
+    }).then(async (res) => {
+      if (!res.ok) throw new Error("Failed to save");
+      setEditing(false);
+      mutateBen();
     });
-  }, [id]);
+
+    toast.promise(promise, {
+      loading: "Saving changes...",
+      success: "Changes saved successfully",
+      error: "Failed to save changes",
+    }).finally(() => setSaving(false));
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this beneficiary? This action cannot be undone.")) return;
+
+    setDeleting(true);
+    const promise = fetch(`/api/beneficiaries/${id}`, { method: "DELETE" }).then(async (res) => {
+      if (!res.ok) throw new Error("Failed to delete");
+      router.push("/beneficiaries");
+    });
+
+    toast.promise(promise, {
+      loading: "Deleting beneficiary...",
+      success: "Beneficiary deleted successfully",
+      error: "Failed to delete beneficiary",
+    }).finally(() => setDeleting(false));
+  };
 
   const statusBadge = (s: string) => {
     const colors: Record<string, string> = {
@@ -72,10 +120,20 @@ export default function BeneficiaryProfile() {
     );
   };
 
-  if (loading) {
+  if (benLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+      <div className="max-w-4xl mx-auto animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i}>
+                <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -94,12 +152,52 @@ export default function BeneficiaryProfile() {
         <h1 className="text-2xl font-bold text-gray-800">
           Beneficiary Profile
         </h1>
-        <button
-          onClick={() => window.print()}
-          className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
-        >
-          Print
-        </button>
+        <div className="flex gap-3">
+          {!editing ? (
+            <>
+              <button
+                onClick={() => window.print()}
+                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <Printer size={16} />
+                Print
+              </button>
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+              >
+                <Pencil size={16} />
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setEditing(false)}
+                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <X size={16} />
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
+              >
+                <Check size={16} />
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="print-area">
@@ -118,67 +216,167 @@ export default function BeneficiaryProfile() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
             <span className="text-gray-500 block">Full Name</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.full_name}
-            </span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.full_name || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, full_name: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.full_name}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Sex</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.sex}
-            </span>
+            {editing ? (
+              <select
+                value={editForm.sex || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, sex: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Female">Female</option>
+                <option value="Male">Male</option>
+              </select>
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.sex}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Age</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.age}
-            </span>
+            {editing ? (
+              <input
+                type="number"
+                value={editForm.age || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, age: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.age}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Kebele</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.kebele}
-            </span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.kebele || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, kebele: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.kebele}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Phone</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.phone}
-            </span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.phone || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, phone: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.phone}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">ID Type</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.id_type}
-            </span>
+            {editing ? (
+              <select
+                value={editForm.id_type || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, id_type: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Kebele ID">Kebele ID</option>
+                <option value="Fayda">Fayda</option>
+                <option value="Passport">Passport</option>
+                <option value="Other">Other</option>
+              </select>
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.id_type}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">ID Number</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.id_number}
-            </span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.id_number || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, id_number: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.id_number}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Category</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.category}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500 block">Sub Details</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.sub_details}
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500 block">Registered Date</span>
-            <span className="font-medium text-gray-800">
-              {beneficiary.registered_date}
-            </span>
+            {editing ? (
+              <select
+                value={editForm.category || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, category: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Women with children">Women with children</option>
+                <option value="Disabled">Disabled</option>
+                <option value="Elderly">Elderly</option>
+                <option value="Other">Other</option>
+              </select>
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.category}
+              </span>
+            )}
           </div>
           <div>
             <span className="text-gray-500 block">Status</span>
-            <span>{statusBadge(beneficiary.status)}</span>
+            {editing ? (
+              <select
+                value={editForm.status || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, status: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            ) : (
+              <span>{statusBadge(beneficiary.status)}</span>
+            )}
           </div>
         </div>
         {beneficiary.notes && (

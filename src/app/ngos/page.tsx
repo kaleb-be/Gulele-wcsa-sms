@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import { Search } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface NGO {
   ngo_id: string;
@@ -20,12 +25,21 @@ const FOCUS_OPTIONS = ["Women", "Children", "Disabled", "Elderly"];
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
 export default function NGOsPage() {
-  const [ngos, setNgos] = useState<NGO[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (status) params.set("status", status);
+
+  const { data: ngosData, error, isLoading, mutate } = useSWR<NGO[]>(
+    `/api/ngos?${params.toString()}`,
+    fetcher
+  );
+
+  const ngos = Array.isArray(ngosData) ? ngosData : [];
 
   const [form, setForm] = useState({
     name: "",
@@ -38,26 +52,6 @@ export default function NGOsPage() {
     status: "Active",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const fetchNgos = () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (status) params.set("status", status);
-    fetch(`/api/ngos?${params.toString()}`)
-      .then((r) => r.json())
-      .then(setNgos)
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchNgos();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(fetchNgos, 300);
-    return () => clearTimeout(timer);
-  }, [search, status]);
 
   const toggleFocus = (area: string) => {
     setForm((prev) => ({
@@ -79,15 +73,14 @@ export default function NGOsPage() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    try {
-      const res = await fetch("/api/ngos", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...form,
-          focus_areas: form.focus_areas.join(", "),
-        }),
-      });
+    const promise = fetch("/api/ngos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...form,
+        focus_areas: form.focus_areas.join(", "),
+      }),
+    }).then(async (res) => {
       if (!res.ok) throw new Error("Failed to create");
       setShowModal(false);
       setForm({
@@ -100,12 +93,14 @@ export default function NGOsPage() {
         start_date: "",
         status: "Active",
       });
-      fetchNgos();
-    } catch {
-      alert("Failed to create NGO");
-    } finally {
-      setSubmitting(false);
-    }
+      mutate();
+    });
+
+    toast.promise(promise, {
+      loading: "Saving NGO...",
+      success: "NGO added successfully",
+      error: "Failed to create NGO",
+    }).finally(() => setSubmitting(false));
   };
 
   const statusBadge = (s: string) => {
@@ -138,13 +133,16 @@ export default function NGOsPage() {
       </div>
 
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <input
-          type="text"
-          placeholder="Search by name or focus areas..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full max-w-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search by name or focus areas..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
@@ -179,15 +177,23 @@ export default function NGOsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-gray-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-900" />
-                      Loading...
-                    </div>
-                  </td>
-                </tr>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-gray-100">
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-16"></div>
+                    </td>
+                  </tr>
+                ))
               ) : ngos.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">

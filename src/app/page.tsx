@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useSWR from "swr";
+import { Printer, Search, Users, Home, ClipboardList } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Beneficiary {
   ben_id: string;
@@ -48,30 +52,18 @@ interface SupportRecord {
 }
 
 export default function Dashboard() {
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [ngos, setNgos] = useState<NGO[]>([]);
-  const [records, setRecords] = useState<SupportRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/beneficiaries").then((r) => r.json()),
-      fetch("/api/ngos").then((r) => r.json()),
-      fetch("/api/support-records").then((r) => r.json()),
-    ]).then(([beneficiariesData, ngosData, recordsData]) => {
-      setBeneficiaries(Array.isArray(beneficiariesData) ? beneficiariesData : []);
-      setNgos(Array.isArray(ngosData) ? ngosData : []);
-      setRecords(Array.isArray(recordsData) ? recordsData : []);
-      setLoading(false);
-    }).catch(() => {
-      setBeneficiaries([]);
-      setNgos([]);
-      setRecords([]);
-      setLoading(false);
-    });
-  }, []);
+  const { data: beneficiariesData, isLoading: benLoading } = useSWR<Beneficiary[]>("/api/beneficiaries", fetcher);
+  const { data: ngosData, isLoading: ngosLoading } = useSWR<NGO[]>("/api/ngos", fetcher);
+  const { data: recordsData, isLoading: recordsLoading } = useSWR<SupportRecord[]>("/api/support-records", fetcher);
+
+  const beneficiaries = Array.isArray(beneficiariesData) ? beneficiariesData : [];
+  const ngos = Array.isArray(ngosData) ? ngosData : [];
+  const records = Array.isArray(recordsData) ? recordsData : [];
+
+  const loading = benLoading || ngosLoading || recordsLoading;
 
   const activeBeneficiaries = beneficiaries.filter(
     (b) => b.status === "Active"
@@ -116,8 +108,14 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+      <div className="max-w-7xl mx-auto animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+          ))}
+        </div>
+        <div className="h-10 bg-gray-200 rounded-lg w-full max-w-md mb-8"></div>
+        <div className="bg-white rounded-xl shadow-md h-96"></div>
       </div>
     );
   }
@@ -126,34 +124,52 @@ export default function Dashboard() {
     <div>
       <div className="no-print">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-blue-600 text-white rounded-xl p-6 shadow-md">
-            <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">
-              Active Beneficiaries
-            </p>
-            <p className="text-4xl font-bold mt-2">{activeBeneficiaries}</p>
+          <div className="bg-blue-600 text-white rounded-xl p-6 shadow-md flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-lg">
+              <Users size={24} />
+            </div>
+            <div>
+              <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">
+                Active Beneficiaries
+              </p>
+              <p className="text-4xl font-bold">{activeBeneficiaries}</p>
+            </div>
           </div>
-          <div className="bg-green-600 text-white rounded-xl p-6 shadow-md">
-            <p className="text-green-100 text-sm font-medium uppercase tracking-wide">
-              Active NGOs
-            </p>
-            <p className="text-4xl font-bold mt-2">{activeNgos}</p>
+          <div className="bg-green-600 text-white rounded-xl p-6 shadow-md flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-lg">
+              <Home size={24} />
+            </div>
+            <div>
+              <p className="text-green-100 text-sm font-medium uppercase tracking-wide">
+                Active NGOs
+              </p>
+              <p className="text-4xl font-bold">{activeNgos}</p>
+            </div>
           </div>
-          <div className="bg-purple-600 text-white rounded-xl p-6 shadow-md">
-            <p className="text-purple-100 text-sm font-medium uppercase tracking-wide">
-              Active Support Records
-            </p>
-            <p className="text-4xl font-bold mt-2">{activeRecords}</p>
+          <div className="bg-purple-600 text-white rounded-xl p-6 shadow-md flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-lg">
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <p className="text-purple-100 text-sm font-medium uppercase tracking-wide">
+                Active Support Records
+              </p>
+              <p className="text-4xl font-bold">{activeRecords}</p>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-4 mb-4 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by beneficiary, NGO, or service..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 w-full max-w-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search records..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -166,8 +182,9 @@ export default function Dashboard() {
           </select>
           <button
             onClick={() => window.print()}
-            className="ml-auto bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
+            className="flex items-center gap-2 ml-auto bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
           >
+            <Printer size={18} />
             Print
           </button>
         </div>

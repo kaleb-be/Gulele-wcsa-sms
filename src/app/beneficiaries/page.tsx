@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import { Search } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Beneficiary {
   ben_id: string;
@@ -29,13 +34,23 @@ const SUB_LABELS: Record<string, string> = {
 };
 
 export default function BeneficiariesPage() {
-  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (category) params.set("category", category);
+  if (status) params.set("status", status);
+
+  const { data: beneficiariesData, error, isLoading, mutate } = useSWR<Beneficiary[]>(
+    `/api/beneficiaries?${params.toString()}`,
+    fetcher
+  );
+
+  const beneficiaries = Array.isArray(beneficiariesData) ? beneficiariesData : [];
 
   const [form, setForm] = useState({
     full_name: "",
@@ -51,31 +66,6 @@ export default function BeneficiariesPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const fetchBeneficiaries = () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (category) params.set("category", category);
-    if (status) params.set("status", status);
-    fetch(`/api/beneficiaries?${params.toString()}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setBeneficiaries(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setBeneficiaries([]))
-      .finally(() => setLoading(false));
-
-  };
-
-  useEffect(() => {
-    fetchBeneficiaries();
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(fetchBeneficiaries, 300);
-    return () => clearTimeout(timer);
-  }, [search, category, status]);
-
   const validate = () => {
     const errs: Record<string, string> = {};
     if (!form.full_name.trim()) errs.full_name = "Full name is required";
@@ -90,12 +80,11 @@ export default function BeneficiariesPage() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
-    try {
-      const res = await fetch("/api/beneficiaries", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+    const promise = fetch("/api/beneficiaries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    }).then(async (res) => {
       if (!res.ok) throw new Error("Failed to create");
       setShowModal(false);
       setForm({
@@ -110,12 +99,14 @@ export default function BeneficiariesPage() {
         sub_details: "",
         notes: "",
       });
-      fetchBeneficiaries();
-    } catch {
-      alert("Failed to register beneficiary");
-    } finally {
-      setSubmitting(false);
-    }
+      mutate();
+    });
+
+    toast.promise(promise, {
+      loading: "Saving beneficiary...",
+      success: "Beneficiary added successfully",
+      error: "Failed to create beneficiary",
+    }).finally(() => setSubmitting(false));
   };
 
   const statusBadge = (s: string) => {
@@ -160,13 +151,16 @@ export default function BeneficiariesPage() {
       </div>
 
       <div className="flex items-center gap-4 mb-4 flex-wrap">
-        <input
-          type="text"
-          placeholder="Search by name, ID, or kebele..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full max-w-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search by name, ID or phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
@@ -214,15 +208,23 @@ export default function BeneficiariesPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-12 text-center text-gray-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-900" />
-                      Loading...
-                    </div>
-                  </td>
-                </tr>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-gray-100">
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div>
+                    </td>
+                  </tr>
+                ))
               ) : beneficiaries.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-gray-500">

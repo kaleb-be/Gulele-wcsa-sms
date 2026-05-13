@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import useSWR from "swr";
+import toast from "react-hot-toast";
+import { Trash2, Printer } from "lucide-react";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface NGO {
   ngo_id: string;
@@ -42,29 +47,46 @@ interface SupportRecord {
 
 export default function NGOProfile() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
-  const [ngo, setNgo] = useState<NGO | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
-  const [ngoServices, setNgoServices] = useState<NGOService[]>([]);
-  const [records, setRecords] = useState<SupportRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: ngo, error: ngoError, isLoading: ngoLoading } = useSWR<NGO>(
+    id ? `/api/ngos/${id}` : null,
+    fetcher
+  );
 
-  useEffect(() => {
-    if (!id) return;
-    Promise.all([
-      fetch(`/api/ngos/${id}`).then((r) => r.json()),
-      fetch(`/api/ngo-services?ngo_id=${id}`).then((r) => r.json()),
-      fetch(`/api/support-records?ngo_id=${id}`).then((r) => r.json()),
-      fetch(`/api/services`).then((r) => r.json()),
-    ]).then(([ngoData, ngoSvcData, recsData, svcData]) => {
-      setNgo(ngoData);
-      setNgoServices(ngoSvcData);
-      setRecords(recsData);
-      setServices(svcData);
-      setLoading(false);
+  const { data: ngoServicesData, isLoading: ngoServicesLoading } = useSWR<NGOService[]>(
+    id ? `/api/ngo-services?ngo_id=${id}` : null,
+    fetcher
+  );
+
+  const { data: recordsData, isLoading: recordsLoading } = useSWR<SupportRecord[]>(
+    id ? `/api/support-records?ngo_id=${id}` : null,
+    fetcher
+  );
+
+  const { data: servicesData } = useSWR<Service[]>(`/api/services`, fetcher);
+
+  const ngoServices = Array.isArray(ngoServicesData) ? ngoServicesData : [];
+  const records = Array.isArray(recordsData) ? recordsData : [];
+  const services = Array.isArray(servicesData) ? servicesData : [];
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this NGO? This action cannot be undone.")) return;
+
+    setDeleting(true);
+    const promise = fetch(`/api/ngos/${id}`, { method: "DELETE" }).then(async (res) => {
+      if (!res.ok) throw new Error("Failed to delete");
+      router.push("/ngos");
     });
-  }, [id]);
+
+    toast.promise(promise, {
+      loading: "Deleting NGO...",
+      success: "NGO deleted successfully",
+      error: "Failed to delete NGO",
+    }).finally(() => setDeleting(false));
+  };
 
   const serviceName = (serviceId: string) => {
     const svc = services.find((s) => s.service_id === serviceId);
@@ -90,10 +112,20 @@ export default function NGOProfile() {
     );
   };
 
-  if (loading) {
+  if (ngoLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-900" />
+      <div className="max-w-4xl mx-auto animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3 mb-6"></div>
+        <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i}>
+                <div className="h-3 bg-gray-200 rounded w-1/4 mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -108,12 +140,23 @@ export default function NGOProfile() {
     <div>
       <div className="no-print flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-800">NGO Profile</h1>
-        <button
-          onClick={() => window.print()}
-          className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
-        >
-          Print
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Printer size={16} />
+            Print
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+          >
+            <Trash2 size={16} />
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
       </div>
 
       <div className="print-area">
