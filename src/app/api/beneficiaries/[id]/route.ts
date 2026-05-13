@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSheetData, updateRow } from "@/lib/sheets";
+import { getSheetData, updateRow, deleteRow } from "@/lib/sheets";
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -44,5 +44,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Failed to update beneficiary" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const rows = await getSheetData("beneficiaries");
+    let rowIndex = -1;
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][0] === params.id) {
+        rowIndex = i + 1;
+        break;
+      }
+    }
+    if (rowIndex === -1) {
+      return NextResponse.json({ error: "Beneficiary not found" }, { status: 404 });
+    }
+
+    await deleteRow("beneficiaries", rowIndex);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Failed to delete beneficiary" }, { status: 500 });
   }
 }
