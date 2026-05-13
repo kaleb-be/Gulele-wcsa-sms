@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import toast from "react-hot-toast";
-import { Trash2, Printer, Pencil, X, Check } from "lucide-react";
+import { Trash2, Printer, Pencil, X, Check, ArrowLeft } from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -45,7 +45,7 @@ export default function BeneficiaryProfile() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { data: beneficiary, error: benError, isLoading: benLoading, mutate: mutateBen } = useSWR<Beneficiary>(
+    const { data: beneficiary, error: benError, isLoading: benLoading, mutate: mutateBen } = useSWR<Beneficiary>(
     id ? `/api/beneficiaries/${id}` : null,
     fetcher
   );
@@ -60,11 +60,30 @@ export default function BeneficiaryProfile() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Beneficiary>>({});
+  const [updatingRecordId, setUpdatingRecordId] = useState<string | null>(null);
 
   const startEdit = () => {
     if (beneficiary) {
       setEditForm(beneficiary);
       setEditing(true);
+    }
+  };
+
+  const handleUpdateRecord = async (recordId: string, updates: Partial<SupportRecord>) => {
+    setUpdatingRecordId(recordId);
+    try {
+      const res = await fetch(`/api/support-records/${recordId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update record");
+      toast.success("Support record updated");
+      mutateRecs();
+    } catch (err) {
+      toast.error("Failed to update record");
+    } finally {
+      setUpdatingRecordId(null);
     }
   };
 
@@ -105,14 +124,16 @@ export default function BeneficiaryProfile() {
 
   const statusBadge = (s: string) => {
     const colors: Record<string, string> = {
-      Active: "bg-green-100 text-green-800",
-      Completed: "bg-blue-100 text-blue-800",
-      Cancelled: "bg-red-100 text-red-800",
+      Active: "bg-green-100 text-green-800 border-green-200",
+      Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      Completed: "bg-blue-100 text-blue-800 border-blue-200",
+      Cancelled: "bg-red-100 text-red-800 border-red-200",
+      Terminated: "bg-orange-100 text-orange-800 border-orange-200",
     };
     return (
       <span
-        className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-          colors[s] || "bg-gray-100 text-gray-800"
+        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+          colors[s] || "bg-gray-100 text-gray-800 border-gray-200"
         }`}
       >
         {s}
@@ -149,9 +170,18 @@ export default function BeneficiaryProfile() {
   return (
     <div>
       <div className="no-print flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Beneficiary Profile
-        </h1>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            title="Go back"
+          >
+            <ArrowLeft size={24} className="text-gray-600" />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Beneficiary Profile: <span className="text-blue-600">{beneficiary.full_name}</span>
+          </h1>
+        </div>
         <div className="flex gap-3">
           {!editing ? (
             <>
@@ -379,12 +409,24 @@ export default function BeneficiaryProfile() {
             )}
           </div>
         </div>
-        {beneficiary.notes && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <span className="text-gray-500 block text-sm">Notes</span>
-            <p className="text-gray-800 text-sm mt-1">{beneficiary.notes}</p>
-          </div>
-        )}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <span className="text-gray-500 block text-sm">Notes</span>
+          {editing ? (
+            <textarea
+              value={editForm.notes || ""}
+              onChange={(e) =>
+                setEditForm({ ...editForm, notes: e.target.value })
+              }
+              rows={3}
+              className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="Beneficiary notes..."
+            />
+          ) : (
+            <p className="text-gray-800 text-sm mt-1 whitespace-pre-wrap">
+              {beneficiary.notes || "No notes available."}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -415,13 +457,16 @@ export default function BeneficiaryProfile() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   Status
                 </th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     No support records found.
@@ -445,6 +490,29 @@ export default function BeneficiaryProfile() {
                       {r.end_date || "—"}
                     </td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {r.status === "Pending" && (
+                        <button
+                          onClick={() => handleUpdateRecord(r.record_id, { status: "Active" })}
+                          disabled={updatingRecordId === r.record_id}
+                          className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                        >
+                          Activate
+                        </button>
+                      )}
+                      {r.status === "Active" && (
+                        <button
+                          onClick={() => {
+                            const endDate = new Date().toISOString().split("T")[0];
+                            handleUpdateRecord(r.record_id, { status: "Terminated", end_date: endDate });
+                          }}
+                          disabled={updatingRecordId === r.record_id}
+                          className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                        >
+                          Terminate
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
