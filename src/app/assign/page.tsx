@@ -17,6 +17,7 @@ interface Beneficiary {
   registered_by: string;
   status: string;
   notes: string;
+  photo_url?: string;
 }
 
 interface Service {
@@ -292,6 +293,9 @@ export default function AssignSupportPage() {
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
                     <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      Photo
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
                       Name
                     </th>
                     <th className="text-left px-4 py-3 font-medium text-gray-600">
@@ -309,7 +313,7 @@ export default function AssignSupportPage() {
                   {benLoading ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-4 py-12 text-center text-gray-500"
                       >
                         <div className="flex items-center justify-center gap-2">
@@ -321,7 +325,7 @@ export default function AssignSupportPage() {
                   ) : beneficiaries.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={4}
+                        colSpan={5}
                         className="px-4 py-8 text-center text-gray-500"
                       >
                         {search.trim()
@@ -340,6 +344,26 @@ export default function AssignSupportPage() {
                             : "hover:bg-gray-50"
                         }`}
                       >
+                        <td className="px-4 py-3">
+                          {b.photo_url ? (
+                            <img
+                              src={b.photo_url}
+                              alt={b.full_name}
+                              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
+                              <span className="text-xs font-bold text-gray-400">
+                                {b.full_name
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
+                              </span>
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 font-medium text-gray-800">
                           {b.full_name}
                         </td>
@@ -358,30 +382,54 @@ export default function AssignSupportPage() {
 
           {selectedBeneficiary && (
             <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-green-800 mb-2">
-                Selected Beneficiary
-              </h3>
-              <div className="text-sm text-green-700 space-y-1">
-                <p>
-                  <span className="font-medium">Name:</span>{" "}
-                  {selectedBeneficiary.full_name}
-                </p>
-                <p>
-                  <span className="font-medium">Category:</span>{" "}
-                  {selectedBeneficiary.category}
-                </p>
-                <p>
-                  <span className="font-medium">Kebele:</span>{" "}
-                  {selectedBeneficiary.kebele}
-                </p>
-                <p>
-                  <span className="font-medium">Phone:</span>{" "}
-                  {selectedBeneficiary.phone || "N/A"}
-                </p>
-                <p>
-                  <span className="font-medium">ID:</span>{" "}
-                  {selectedBeneficiary.id_number}
-                </p>
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0">
+                  {selectedBeneficiary.photo_url ? (
+                    <img
+                      src={selectedBeneficiary.photo_url}
+                      alt={selectedBeneficiary.full_name}
+                      className="w-16 h-16 rounded-full object-cover border-2 border-green-200 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">
+                      <span className="text-xl font-bold text-green-600">
+                        {selectedBeneficiary.full_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-green-800 mb-2">
+                    Selected Beneficiary
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 text-sm text-green-700">
+                    <p>
+                      <span className="font-medium">Name:</span>{" "}
+                      {selectedBeneficiary.full_name}
+                    </p>
+                    <p>
+                      <span className="font-medium">Category:</span>{" "}
+                      {selectedBeneficiary.category}
+                    </p>
+                    <p>
+                      <span className="font-medium">Kebele:</span>{" "}
+                      {selectedBeneficiary.kebele}
+                    </p>
+                    <p>
+                      <span className="font-medium">Phone:</span>{" "}
+                      {selectedBeneficiary.phone || "N/A"}
+                    </p>
+                    <p>
+                      <span className="font-medium">ID:</span>{" "}
+                      {selectedBeneficiary.id_number}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -505,17 +553,39 @@ export default function AssignSupportPage() {
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                  <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
-                    Beneficiary
-                  </p>
-                  <p className="font-semibold text-gray-800">
-                    {selectedBeneficiary?.full_name}
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    {selectedBeneficiary?.category} &middot;{" "}
-                    {selectedBeneficiary?.kebele}
-                  </p>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100 flex items-center gap-4">
+                  <div className="flex-shrink-0">
+                    {selectedBeneficiary?.photo_url ? (
+                      <img
+                        src={selectedBeneficiary.photo_url}
+                        alt={selectedBeneficiary.full_name}
+                        className="w-12 h-12 rounded-full object-cover border border-blue-200"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center border border-blue-200">
+                        <span className="text-sm font-bold text-blue-600">
+                          {selectedBeneficiary?.full_name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()
+                            .slice(0, 2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
+                      Beneficiary
+                    </p>
+                    <p className="font-semibold text-gray-800">
+                      {selectedBeneficiary?.full_name}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {selectedBeneficiary?.category} &middot;{" "}
+                      {selectedBeneficiary?.kebele}
+                    </p>
+                  </div>
                 </div>
                 <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                   <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-1">
