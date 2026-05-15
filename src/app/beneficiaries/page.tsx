@@ -5,6 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { Search } from "lucide-react";
+import ImageUpload from "@/components/ImageUpload";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -23,6 +24,7 @@ interface Beneficiary {
   registered_by: string;
   status: string;
   notes: string;
+  photo_url?: string;
 }
 
 const CATEGORIES = ["Women with children", "Disabled", "Elderly", "Other"];
@@ -37,6 +39,8 @@ export default function BeneficiariesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
+  const [sex, setSex] = useState("");
+  const [kebele, setKebele] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -44,6 +48,8 @@ export default function BeneficiariesPage() {
   if (search) params.set("search", search);
   if (category) params.set("category", category);
   if (status) params.set("status", status);
+  if (sex) params.set("sex", sex);
+  if (kebele) params.set("kebele", kebele);
 
   const { data: beneficiariesData, error, isLoading, mutate } = useSWR<Beneficiary[]>(
     `/api/beneficiaries?${params.toString()}`,
@@ -63,6 +69,7 @@ export default function BeneficiariesPage() {
     category: "",
     sub_details: "",
     notes: "",
+    photo_url: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -99,6 +106,7 @@ export default function BeneficiariesPage() {
         category: "",
         sub_details: "",
         notes: "",
+        photo_url: "",
       });
       mutate();
     });
@@ -181,9 +189,27 @@ export default function BeneficiariesPage() {
         >
           <option value="">All Statuses</option>
           <option value="Active">Active</option>
+          <option value="Pending">Pending</option>
           <option value="Completed">Completed</option>
           <option value="Cancelled">Cancelled</option>
+          <option value="Terminated">Terminated</option>
         </select>
+        <select
+          value={sex}
+          onChange={(e) => setSex(e.target.value)}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Sexes</option>
+          <option value="Female">Female</option>
+          <option value="Male">Male</option>
+        </select>
+        <input
+          type="text"
+          placeholder="Filter by Kebele..."
+          value={kebele}
+          onChange={(e) => setKebele(e.target.value)}
+          className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-32"
+        />
       </div>
 
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -438,6 +464,13 @@ export default function BeneficiariesPage() {
                   onChange={(e) => updateField("sub_details", e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Photo (optional)
+                </label>
+                <ImageUpload value={form.photo_url} onChange={(url) => updateField("photo_url", url)} />
               </div>
 
               <div>
