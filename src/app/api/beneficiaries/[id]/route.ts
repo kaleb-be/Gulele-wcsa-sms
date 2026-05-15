@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     const body = await request.json();
-    const fields = ["ben_id","full_name","sex","age","kebele","phone","id_type","id_number","category","sub_details","registered_date","registered_by","status","notes"];
+    const fields = ["ben_id","full_name","sex","age","kebele","phone","id_type","id_number","category","sub_details","registered_date","registered_by","status","notes", "photo_url"];
     fields.forEach((field, idx) => {
       if (body[field] !== undefined) existingRow[idx] = String(body[field]);
     });

@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")?.toLowerCase() || "";
     const category = searchParams.get("category") || "";
     const status = searchParams.get("status") || "";
+    const sex = searchParams.get("sex") || "";
+    const kebele = searchParams.get("kebele")?.toLowerCase() || "";
 
     const rows = await getSheetData("beneficiaries");
     const headers = rows[0] ?? [];
@@ -27,6 +29,12 @@ export async function GET(request: NextRequest) {
     }
     if (status) {
       beneficiaries = beneficiaries.filter((b: any) => b.status === status);
+    }
+    if (sex) {
+      beneficiaries = beneficiaries.filter((b: any) => b.sex === sex);
+    }
+    if (kebele) {
+      beneficiaries = beneficiaries.filter((b: any) => b.kebele?.toLowerCase().includes(kebele));
     }
 
     return NextResponse.json(beneficiaries);
@@ -51,6 +59,7 @@ export async function POST(request: NextRequest) {
       registered_by,
       status,
       notes,
+      photo_url,
     } = body;
 
     if (!full_name || !id_number) {
@@ -75,6 +84,7 @@ export async function POST(request: NextRequest) {
       registered_by || "",
       status || "Active",
       notes || "",
+      photo_url || "",
     ]);
 
     return NextResponse.json({ ben_id, full_name });
