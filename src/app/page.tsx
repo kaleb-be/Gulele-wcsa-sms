@@ -223,9 +223,9 @@ export default function Dashboard() {
                   </td>
                 </tr>
               ) : (
-                filteredRecords.map((r) => (
+                filteredRecords.map((r, idx) => (
                   <tr
-                    key={r.record_id}
+                    key={`${r.record_id}-${idx}`}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3">{r.beneficiary_name}</td>

@@ -1,10 +1,21 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useParams, useRouter, Link } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import useSWR from "swr";
 import toast from "react-hot-toast";
-import { Trash2, Printer, Pencil, X, Check, Search, Eye, Plus, ArrowLeft } from "lucide-react";
+import {
+  Trash2,
+  Printer,
+  Pencil,
+  X,
+  Check,
+  Search,
+  Eye,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -50,19 +61,29 @@ export default function NGOProfile() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { data: ngo, error: ngoError, isLoading: ngoLoading, mutate: mutateNgo } = useSWR<NGO>(
-    id ? `/api/ngos/${id}` : null,
-    fetcher
-  );
+  const {
+    data: ngo,
+    error: ngoError,
+    isLoading: ngoLoading,
+    mutate: mutateNgo,
+  } = useSWR<NGO>(id ? `/api/ngos/${id}` : null, fetcher);
 
-  const { data: ngoServicesData, isLoading: ngoServicesLoading, mutate: mutateNgoServices } = useSWR<NGOService[]>(
+  const {
+    data: ngoServicesData,
+    isLoading: ngoServicesLoading,
+    mutate: mutateNgoServices,
+  } = useSWR<NGOService[]>(
     id ? `/api/ngo-services?ngo_id=${id}` : null,
-    fetcher
+    fetcher,
   );
 
-  const { data: recordsData, isLoading: recordsLoading, mutate: mutateRecs } = useSWR<SupportRecord[]>(
+  const {
+    data: recordsData,
+    isLoading: recordsLoading,
+    mutate: mutateRecs,
+  } = useSWR<SupportRecord[]>(
     id ? `/api/support-records?ngo_id=${id}` : null,
-    fetcher
+    fetcher,
   );
 
   const { data: servicesData } = useSWR<Service[]>(`/api/services`, fetcher);
@@ -70,38 +91,44 @@ export default function NGOProfile() {
   const ngoServices = Array.isArray(ngoServicesData) ? ngoServicesData : [];
   const records = Array.isArray(recordsData) ? recordsData : [];
   const services = Array.isArray(servicesData) ? servicesData : [];
-  
+
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editForm, setEditForm] = useState<Partial<NGO>>({});
-  const [editingCapacity, setEditingCapacity] = useState<{service_id: string, capacity: string} | null>(null);
+  const [editingCapacity, setEditingCapacity] = useState<{
+    service_id: string;
+    capacity: string;
+  } | null>(null);
   const [updatingCapacity, setUpdatingCapacity] = useState(false);
   const [updatingRecordId, setUpdatingRecordId] = useState<string | null>(null);
   const [showAddServiceModal, setShowAddServiceModal] = useState(false);
   const [addingService, setAddingService] = useState(false);
-  const [newServiceForm, setNewServiceForm] = useState({ service_id: "", capacity: "" });
+  const [newServiceForm, setNewServiceForm] = useState({
+    service_id: "",
+    capacity: "",
+  });
 
   // Search and Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
   const filteredRecords = useMemo(() => {
-    return records.filter(r => {
-      const matchesSearch = 
+    return records.filter((r) => {
+      const matchesSearch =
         r.beneficiary_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.service_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.record_id.toLowerCase().includes(searchQuery.toLowerCase());
-      
+
       const matchesStatus = statusFilter === "All" || r.status === statusFilter;
-      
+
       return matchesSearch && matchesStatus;
     });
   }, [records, searchQuery, statusFilter]);
 
   const activeCountByService = useMemo(() => {
     const counts: Record<string, number> = {};
-    records.forEach(r => {
+    records.forEach((r) => {
       if (r.status === "Active") {
         counts[r.service_id] = (counts[r.service_id] || 0) + 1;
       }
@@ -145,7 +172,7 @@ export default function NGOProfile() {
         body: JSON.stringify({
           ngo_id: id,
           service_id: editingCapacity.service_id,
-          capacity: editingCapacity.capacity
+          capacity: editingCapacity.capacity,
         }),
       });
       if (!res.ok) throw new Error("Failed to update capacity");
@@ -159,7 +186,10 @@ export default function NGOProfile() {
     }
   };
 
-  const handleUpdateRecord = async (recordId: string, updates: Partial<SupportRecord>) => {
+  const handleUpdateRecord = async (
+    recordId: string,
+    updates: Partial<SupportRecord>,
+  ) => {
     setUpdatingRecordId(recordId);
     try {
       const res = await fetch(`/api/support-records/${recordId}`, {
@@ -187,7 +217,7 @@ export default function NGOProfile() {
         body: JSON.stringify({
           ngo_id: id,
           service_id: newServiceForm.service_id,
-          capacity: newServiceForm.capacity
+          capacity: newServiceForm.capacity,
         }),
       });
       if (!res.ok) throw new Error("Failed to add service");
@@ -203,11 +233,19 @@ export default function NGOProfile() {
   };
 
   const handleDeleteService = async (serviceId: string) => {
-    if (!confirm(`Are you sure you want to remove ${serviceName(serviceId)} from this NGO's offerings?`)) return;
+    if (
+      !confirm(
+        `Are you sure you want to remove ${serviceName(serviceId)} from this NGO's offerings?`,
+      )
+    )
+      return;
     try {
-      const res = await fetch(`/api/ngo-services?ngo_id=${id}&service_id=${serviceId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/ngo-services?ngo_id=${id}&service_id=${serviceId}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!res.ok) throw new Error("Failed to delete service");
       toast.success("Service removed");
       mutateNgoServices();
@@ -217,19 +255,28 @@ export default function NGOProfile() {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this NGO? This action cannot be undone.")) return;
+    if (
+      !confirm(
+        "Are you sure you want to delete this NGO? This action cannot be undone.",
+      )
+    )
+      return;
 
     setDeleting(true);
-    const promise = fetch(`/api/ngos/${id}`, { method: "DELETE" }).then(async (res) => {
-      if (!res.ok) throw new Error("Failed to delete");
-      router.push("/ngos");
-    });
+    const promise = fetch(`/api/ngos/${id}`, { method: "DELETE" }).then(
+      async (res) => {
+        if (!res.ok) throw new Error("Failed to delete");
+        router.push("/ngos");
+      },
+    );
 
-    toast.promise(promise, {
-      loading: "Deleting NGO...",
-      success: "NGO deleted successfully",
-      error: "Failed to delete NGO",
-    }).finally(() => setDeleting(false));
+    toast
+      .promise(promise, {
+        loading: "Deleting NGO...",
+        success: "NGO deleted successfully",
+        error: "Failed to delete NGO",
+      })
+      .finally(() => setDeleting(false));
   };
 
   const serviceName = (serviceId: string) => {
@@ -277,9 +324,7 @@ export default function NGOProfile() {
   }
 
   if (!ngo || (ngo as any).error) {
-    return (
-      <div className="text-center py-16 text-gray-500">NGO not found</div>
-    );
+    return <div className="text-center py-16 text-gray-500">NGO not found</div>;
   }
 
   return (
@@ -365,7 +410,9 @@ export default function NGOProfile() {
               <input
                 type="text"
                 value={editForm.name || ""}
-                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, name: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
@@ -378,11 +425,15 @@ export default function NGOProfile() {
               <input
                 type="text"
                 value={editForm.focus_areas || ""}
-                onChange={(e) => setEditForm({ ...editForm, focus_areas: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, focus_areas: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.focus_areas}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.focus_areas}
+              </span>
             )}
           </div>
           <div>
@@ -390,7 +441,9 @@ export default function NGOProfile() {
             {editing ? (
               <select
                 value={editForm.status || ""}
-                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, status: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Active">Active</option>
@@ -407,11 +460,15 @@ export default function NGOProfile() {
               <input
                 type="text"
                 value={editForm.contact_person || ""}
-                onChange={(e) => setEditForm({ ...editForm, contact_person: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, contact_person: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.contact_person || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.contact_person || "—"}
+              </span>
             )}
           </div>
           <div>
@@ -420,11 +477,15 @@ export default function NGOProfile() {
               <input
                 type="text"
                 value={editForm.phone || ""}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, phone: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.phone || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.phone || "—"}
+              </span>
             )}
           </div>
           <div>
@@ -433,11 +494,15 @@ export default function NGOProfile() {
               <input
                 type="email"
                 value={editForm.email || ""}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, email: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.email || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.email || "—"}
+              </span>
             )}
           </div>
           <div>
@@ -446,11 +511,18 @@ export default function NGOProfile() {
               <input
                 type="text"
                 value={editForm.registration_number || ""}
-                onChange={(e) => setEditForm({ ...editForm, registration_number: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    registration_number: e.target.value,
+                  })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.registration_number || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.registration_number || "—"}
+              </span>
             )}
           </div>
           <div>
@@ -459,11 +531,15 @@ export default function NGOProfile() {
               <input
                 type="date"
                 value={editForm.start_date || ""}
-                onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, start_date: e.target.value })
+                }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             ) : (
-              <span className="font-medium text-gray-800">{ngo.start_date || "—"}</span>
+              <span className="font-medium text-gray-800">
+                {ngo.start_date || "—"}
+              </span>
             )}
           </div>
         </div>
@@ -472,7 +548,9 @@ export default function NGOProfile() {
           {editing ? (
             <textarea
               value={editForm.notes || ""}
-              onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+              onChange={(e) =>
+                setEditForm({ ...editForm, notes: e.target.value })
+              }
               rows={3}
               className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               placeholder="NGO notes..."
@@ -540,7 +618,12 @@ export default function NGOProfile() {
                         <input
                           type="text"
                           value={editingCapacity.capacity}
-                          onChange={(e) => setEditingCapacity({ ...editingCapacity, capacity: e.target.value })}
+                          onChange={(e) =>
+                            setEditingCapacity({
+                              ...editingCapacity,
+                              capacity: e.target.value,
+                            })
+                          }
                           className="w-20 border border-gray-300 rounded px-2 py-1 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           autoFocus
                         />
@@ -549,11 +632,14 @@ export default function NGOProfile() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        (activeCountByService[ns.service_id] || 0) >= parseInt(ns.capacity || "0") && ns.capacity
-                        ? "bg-red-100 text-red-800"
-                        : "bg-blue-50 text-blue-700"
-                      }`}>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          (activeCountByService[ns.service_id] || 0) >=
+                            parseInt(ns.capacity || "0") && ns.capacity
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-50 text-blue-700"
+                        }`}
+                      >
                         {activeCountByService[ns.service_id] || 0}
                       </span>
                     </td>
@@ -579,7 +665,12 @@ export default function NGOProfile() {
                       ) : (
                         <div className="flex justify-end gap-3">
                           <button
-                            onClick={() => setEditingCapacity({ service_id: ns.service_id, capacity: ns.capacity })}
+                            onClick={() =>
+                              setEditingCapacity({
+                                service_id: ns.service_id,
+                                capacity: ns.capacity,
+                              })
+                            }
                             className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
                           >
                             <Pencil size={14} />
@@ -610,7 +701,10 @@ export default function NGOProfile() {
           </h2>
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search records..."
@@ -660,7 +754,9 @@ export default function NGOProfile() {
                     colSpan={5}
                     className="px-4 py-8 text-center text-gray-500"
                   >
-                    {searchQuery || statusFilter !== "All" ? "No records match your filters." : "No support records found."}
+                    {searchQuery || statusFilter !== "All"
+                      ? "No records match your filters."
+                      : "No support records found."}
                   </td>
                 </tr>
               ) : (
@@ -670,20 +766,24 @@ export default function NGOProfile() {
                     className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-3">
-                      <div className="font-medium text-gray-800">{r.beneficiary_name}</div>
-                      <div className="text-[10px] font-mono text-gray-400">{r.record_id}</div>
+                      <div className="font-medium text-gray-800">
+                        {r.beneficiary_name}
+                      </div>
+                      <div className="text-[10px] font-mono text-gray-400">
+                        {r.record_id}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-600">
                       {r.service_name}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {r.start_date}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600">{r.start_date}</td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => router.push(`/beneficiaries/${r.ben_id}`)}
+                          onClick={() =>
+                            router.push(`/beneficiaries/${r.ben_id}`)
+                          }
                           className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="View Beneficiary"
                         >
@@ -691,7 +791,11 @@ export default function NGOProfile() {
                         </button>
                         {r.status === "Pending" && (
                           <button
-                            onClick={() => handleUpdateRecord(r.record_id, { status: "Active" })}
+                            onClick={() =>
+                              handleUpdateRecord(r.record_id, {
+                                status: "Active",
+                              })
+                            }
                             disabled={updatingRecordId === r.record_id}
                             className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50"
                           >
@@ -701,8 +805,13 @@ export default function NGOProfile() {
                         {r.status === "Active" && (
                           <button
                             onClick={() => {
-                              const endDate = new Date().toISOString().split("T")[0];
-                              handleUpdateRecord(r.record_id, { status: "Terminated", end_date: endDate });
+                              const endDate = new Date()
+                                .toISOString()
+                                .split("T")[0];
+                              handleUpdateRecord(r.record_id, {
+                                status: "Terminated",
+                                end_date: endDate,
+                              });
                             }}
                             disabled={updatingRecordId === r.record_id}
                             className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
@@ -724,35 +833,60 @@ export default function NGOProfile() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h3 className="text-lg font-bold text-gray-800">Add Service to NGO</h3>
-              <button onClick={() => setShowAddServiceModal(false)} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-bold text-gray-800">
+                Add Service to NGO
+              </h3>
+              <button
+                onClick={() => setShowAddServiceModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={20} />
               </button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Select Service</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Select Service
+                </label>
                 <select
                   value={newServiceForm.service_id}
-                  onChange={(e) => setNewServiceForm({ ...newServiceForm, service_id: e.target.value })}
+                  onChange={(e) =>
+                    setNewServiceForm({
+                      ...newServiceForm,
+                      service_id: e.target.value,
+                    })
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Select a service...</option>
                   {services
-                    .filter(s => !ngoServices.some(ns => ns.service_id === s.service_id))
-                    .map(s => (
-                      <option key={s.service_id} value={s.service_id}>{s.service_name}</option>
-                    ))
-                  }
+                    .filter(
+                      (s) =>
+                        !ngoServices.some(
+                          (ns) => ns.service_id === s.service_id,
+                        ),
+                    )
+                    .map((s) => (
+                      <option key={s.service_id} value={s.service_id}>
+                        {s.service_name}
+                      </option>
+                    ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Capacity (Optional)
+                </label>
                 <input
                   type="number"
                   placeholder="e.g. 50"
                   value={newServiceForm.capacity}
-                  onChange={(e) => setNewServiceForm({ ...newServiceForm, capacity: e.target.value })}
+                  onChange={(e) =>
+                    setNewServiceForm({
+                      ...newServiceForm,
+                      capacity: e.target.value,
+                    })
+                  }
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
