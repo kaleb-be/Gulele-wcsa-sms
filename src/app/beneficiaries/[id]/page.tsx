@@ -175,8 +175,8 @@ export default function BeneficiaryProfile() {
 
   return (
     <div>
-      <div className="no-print flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-4">
+      <div className="no-print flex flex-col sm:flex-row items-center sm:justify-between mb-6 gap-6">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <button
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -188,7 +188,7 @@ export default function BeneficiaryProfile() {
             Beneficiary Profile: <span className="text-blue-600">{beneficiary.full_name}</span>
           </h1>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-row flex-wrap justify-center sm:justify-end gap-3 w-full sm:w-auto">
           {!editing ? (
             <>
               <button
@@ -246,7 +246,7 @@ export default function BeneficiaryProfile() {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6 pb-6 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6 pb-6 border-b border-gray-100">
           <div className="flex-shrink-0">
             {editing ? (
               <ImageUpload

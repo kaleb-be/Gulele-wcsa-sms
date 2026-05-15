@@ -329,8 +329,8 @@ export default function NGOProfile() {
 
   return (
     <div>
-      <div className="no-print flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="no-print flex flex-col sm:flex-row items-center sm:justify-between mb-6 gap-6">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           <button
             onClick={() => router.back()}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -342,19 +342,19 @@ export default function NGOProfile() {
             NGO Profile: <span className="text-blue-600">{ngo.name}</span>
           </h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-row flex-wrap justify-center sm:justify-end gap-3 w-full sm:w-auto">
           {!editing ? (
             <>
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <Printer size={16} />
                 Print
               </button>
               <button
                 onClick={startEdit}
-                className="flex items-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
               >
                 <Pencil size={16} />
                 Edit
@@ -362,7 +362,7 @@ export default function NGOProfile() {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
               >
                 <Trash2 size={16} />
                 {deleting ? "Deleting..." : "Delete"}
@@ -372,7 +372,7 @@ export default function NGOProfile() {
             <>
               <button
                 onClick={() => setEditing(false)}
-                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <X size={16} />
                 Cancel
@@ -380,7 +380,7 @@ export default function NGOProfile() {
               <button
                 onClick={handleSaveNgo}
                 disabled={saving}
-                className="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 <Check size={16} />
                 {saving ? "Saving..." : "Save Changes"}
