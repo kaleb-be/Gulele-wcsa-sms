@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { Trash2, Printer, Pencil, X, Check, ArrowLeft } from "lucide-react";
+import ImageUpload from "@/components/ImageUpload";
+import Link from "next/link";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -23,6 +25,7 @@ interface Beneficiary {
   registered_by: string;
   status: string;
   notes: string;
+  photo_url?: string;
 }
 
 interface SupportRecord {
@@ -163,13 +166,16 @@ export default function BeneficiaryProfile() {
     return (
       <div className="text-center py-16 text-gray-500">
         Beneficiary not found
+        <Link href="/beneficiaries" className="text-blue-600 hover:underline ml-2">
+          Back to list
+        </Link>
       </div>
     );
   }
 
   return (
     <div>
-      <div className="no-print flex items-center justify-between mb-6">
+      <div className="no-print flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
@@ -182,19 +188,19 @@ export default function BeneficiaryProfile() {
             Beneficiary Profile: <span className="text-blue-600">{beneficiary.full_name}</span>
           </h1>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           {!editing ? (
             <>
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <Printer size={16} />
                 Print
               </button>
               <button
                 onClick={startEdit}
-                className="flex items-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
               >
                 <Pencil size={16} />
                 Edit
@@ -202,7 +208,7 @@ export default function BeneficiaryProfile() {
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="flex items-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
               >
                 <Trash2 size={16} />
                 {deleting ? "Deleting..." : "Delete"}
@@ -212,7 +218,7 @@ export default function BeneficiaryProfile() {
             <>
               <button
                 onClick={() => setEditing(false)}
-                className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <X size={16} />
                 Cancel
@@ -220,7 +226,7 @@ export default function BeneficiaryProfile() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 <Check size={16} />
                 {saving ? "Saving..." : "Save Changes"}
@@ -240,6 +246,45 @@ export default function BeneficiaryProfile() {
       </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-6 pb-6 border-b border-gray-100">
+          <div className="flex-shrink-0">
+            {editing ? (
+              <ImageUpload
+                value={editForm.photo_url || ""}
+                onChange={(url) => setEditForm({ ...editForm, photo_url: url })}
+              />
+            ) : beneficiary.photo_url ? (
+              <img
+                src={beneficiary.photo_url}
+                alt={beneficiary.full_name}
+                className="w-24 h-24 rounded-full object-cover border-2 border-blue-100 shadow-sm"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200 shadow-sm">
+                <span className="text-2xl font-bold text-gray-400">
+                  {beneficiary.full_name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </span>
+              </div>
+            )}
+          </div>
+          <div className="text-center md:text-left">
+            <h2 className="text-xl font-bold text-gray-800">
+              {beneficiary.full_name}
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              ID: {beneficiary.ben_id} • Registered on {beneficiary.registered_date}
+            </p>
+            <div className="mt-3">
+              {statusBadge(beneficiary.status)}
+            </div>
+          </div>
+        </div>
+
         <h2 className="text-lg font-semibold text-gray-800 mb-4">
           Personal Information
         </h2>
