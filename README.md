@@ -19,7 +19,6 @@ This system is designed to streamline the management of support distribution bet
 - **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **Database**: Google Sheets API v4 (used as a lightweight, familiar database for office staff)
-- **Icons/Images**: Custom branding for the Gullele WCSA Office
 
 ## Database Structure (Google Sheets)
 
@@ -53,8 +52,3 @@ GOOGLE_SPREADSHEET_ID=your-spreadsheet-id
     ```bash
     npm run dev
     ```
-
-## Key Business Rules
-
-- **Unique Support Rule**: A beneficiary CANNOT have two "Active" records for the same `service_id`. They CAN receive different services (e.g., Food support and Medical aid) from different NGOs at the same time.
-- **Auto-ID Generation**: The system automatically generates IDs (NGO-001, BEN-001, etc.) by incrementing based on the last entry in the respective Google Sheet.
