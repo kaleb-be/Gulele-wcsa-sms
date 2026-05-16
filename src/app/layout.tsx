@@ -6,6 +6,9 @@ import { Toaster } from "react-hot-toast";
 export const metadata: Metadata = {
   title: "WCS Office - Support Management System",
   description: "Women, Children and Social Affairs Office — Gullele Sub-City",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
