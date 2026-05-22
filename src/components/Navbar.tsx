@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
+import { useSession, signOut } from "next-auth/react";
 import logo from "@/assets/gwcsa logo.png";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     if (isOpen) {
@@ -21,12 +23,21 @@ export default function Navbar() {
     };
   }, [isOpen]);
 
+  // Hide navbar on login page or while session is loading
+  if (pathname === "/login" || status === "loading") return null;
+
+  // Hide navbar if not logged in
+  if (!session) return null;
+
+  const isAdmin = (session.user as any)?.role === "admin";
+
   const links = [
     { href: "/", label: "Dashboard" },
     { href: "/beneficiaries", label: "Beneficiaries" },
     { href: "/ngos", label: "NGOs" },
     { href: "/assign", label: "Assign Support" },
     { href: "/services", label: "Services" },
+    ...(isAdmin ? [{ href: "/users", label: "Users" }] : []),
   ];
 
   return (
@@ -36,9 +47,9 @@ export default function Navbar() {
 
           <Link href="/" className="font-bold text-sm lg:text-sm flex items-center gap-2">
             <div className="w-10 h-10 overflow-hidden rounded-full flex items-center justify-center bg-white/10 sm:bg-transparent">
-              <Image 
-                src={logo} 
-                alt={"GWCSA logo"} 
+              <Image
+                src={logo}
+                alt={"GWCSA logo"}
                 width={40}
                 height={40}
                 className="object-cover scale-[2.1]"
@@ -62,6 +73,17 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+          </div>
+
+          {/* Desktop: user name + sign out */}
+          <div className="hidden md:flex items-center gap-3">
+            <span className="text-sm text-blue-200">{session.user?.name}</span>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-sm bg-blue-800 hover:bg-blue-700 px-3 py-1.5 rounded transition-colors"
+            >
+              Sign out
+            </button>
           </div>
 
           <button
@@ -135,6 +157,17 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+            </div>
+
+            {/* Mobile: user name + sign out at bottom of drawer */}
+            <div className="px-4 py-4 border-t border-blue-800 space-y-2">
+              <p className="text-sm text-blue-200">{session.user?.name}</p>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="w-full text-sm bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded transition-colors text-left"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </div>
