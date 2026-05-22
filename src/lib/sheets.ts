@@ -34,10 +34,13 @@ function getSpreadsheetId(): string {
 }
 
 const SHEET_NAMES: Record<string, string> = {
-  ngos: "NGOs",
-  beneficiaries: "Beneficiaries",
-  services: "Services",
-  ngo_services: "NGO_Services",
+  ngos: "ngos",
+  beneficiaries: "beneficiaries",
+  services: "services",
+  enrollments: "enrollments",
+  projects: "projects",
+  budget_records: "budget_records",
+  quota_requests: "quota_requests",
   support_records: "Support_Records",
   users: "users",
 };
