@@ -39,6 +39,7 @@ const SHEET_NAMES: Record<string, string> = {
   services: "Services",
   ngo_services: "NGO_Services",
   support_records: "Support_Records",
+  users: "users",
 };
 
 export async function getSheetData(sheetKey: string): Promise<string[][]> {
@@ -108,14 +109,13 @@ export async function generateId(prefix: string, sheetKey: string): Promise<stri
   const rows = await getSheetData(sheetKey);
   let maxNum = 0;
   for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (row[0] && row[0].startsWith(prefix)) {
-      const num = parseInt(row[0].replace(prefix, ""), 10);
+    const id = rows[i][0] ?? "";
+    if (id.startsWith(`${prefix}-`)) {
+      const num = parseInt(id.split("-")[1], 10);
       if (!isNaN(num) && num > maxNum) maxNum = num;
     }
   }
-  const nextNum = maxNum + 1;
-  return `${prefix}-${String(nextNum).padStart(3, "0")}`;
+  return `${prefix}-${String(maxNum + 1).padStart(3, "0")}`;
 }
 
 export async function findRowIndex(sheetKey: string, columnIndex: number, value: string): Promise<number | null> {
@@ -124,4 +124,16 @@ export async function findRowIndex(sheetKey: string, columnIndex: number, value:
     if (rows[i][columnIndex] === value) return i + 1;
   }
   return null;
+}
+
+export async function updateCell(sheetKey: string, rowIndex: number, columnIndex: number, value: string): Promise<void> {
+  const sheets = getSheetsClient();
+  const sheetName = SHEET_NAMES[sheetKey];
+  if (!sheetName) throw new Error(`Unknown sheet key: ${sheetKey}`);
+  await sheets.values.update({
+    spreadsheetId: getSpreadsheetId(),
+    range: `${sheetName}!${String.fromCharCode(65 + columnIndex - 1)}${rowIndex}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[value]] },
+  });
 }
