@@ -35,8 +35,9 @@ export default function Navbar() {
     { href: "/", label: "Dashboard" },
     { href: "/beneficiaries", label: "Beneficiaries" },
     { href: "/ngos", label: "NGOs" },
-    { href: "/assign", label: "Assign Support" },
-    { href: "/services", label: "Services" },
+    { href: "/assign", label: "Enroll" },
+    { href: "/budget", label: "Budget" },
+    { href: "/quota-requests", label: "Quota Requests" },
     ...(isAdmin ? [{ href: "/users", label: "Users" }] : []),
   ];
 

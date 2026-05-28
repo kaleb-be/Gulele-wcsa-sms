@@ -36,14 +36,26 @@ function getSpreadsheetId(): string {
 const SHEET_NAMES: Record<string, string> = {
   ngos: "ngos",
   beneficiaries: "beneficiaries",
-  services: "services",
   enrollments: "enrollments",
   projects: "projects",
   budget_records: "budget_records",
   quota_requests: "quota_requests",
-  support_records: "Support_Records",
   users: "users",
 };
+
+export const AOI_CATEGORIES = [
+  "Education",
+  "Economic Empowerment",
+  "Health and Nutrition",
+  "Psychosocial Support",
+  "Physical Rehabilitation",
+  "Family Empowerment",
+  "Child Development",
+  "Elderly Care",
+  "Disability Support",
+  "Legal Aid",
+  "Housing and Shelter"
+] as const;
 
 export async function getSheetData(sheetKey: string): Promise<string[][]> {
   const sheets = getSheetsClient();
