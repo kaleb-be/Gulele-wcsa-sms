@@ -4,6 +4,9 @@ import { useState } from "react";
 import useSWR from "swr";
 import { Printer, Search, Users, Home, ClipboardList } from "lucide-react";
 
+// TODO: IMPLEMENT LOCALIZATION IN AMHARIC
+
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Beneficiary {
@@ -26,29 +29,33 @@ interface Beneficiary {
 interface NGO {
   ngo_id: string;
   name: string;
-  focus_areas: string;
   contact_person: string;
   phone: string;
   email: string;
   registration_number: string;
-  start_date: string;
   status: string;
   notes: string;
 }
 
-interface SupportRecord {
-  record_id: string;
+interface Enrollment {
+  enrollment_id: string;
   ben_id: string;
+  project_id: string;
   ngo_id: string;
-  service_id: string;
+  aoi_category: string;
   start_date: string;
   end_date: string;
   status: string;
-  assigned_by: string;
+  enrolled_by: string;
   notes: string;
+  project_title: string;
   ngo_name: string;
-  service_name: string;
   beneficiary_name: string;
+}
+
+interface Project {
+  project_id: string;
+  status: string;
 }
 
 export default function Dashboard() {
@@ -57,21 +64,24 @@ export default function Dashboard() {
 
   const { data: beneficiariesData, isLoading: benLoading } = useSWR<Beneficiary[]>("/api/beneficiaries", fetcher);
   const { data: ngosData, isLoading: ngosLoading } = useSWR<NGO[]>("/api/ngos", fetcher);
-  const { data: recordsData, isLoading: recordsLoading } = useSWR<SupportRecord[]>("/api/support-records", fetcher);
+  const { data: recordsData, isLoading: recordsLoading } = useSWR<Enrollment[]>("/api/enrollments", fetcher);
+  const { data: projectsData, isLoading: projectsLoading } = useSWR<Project[]>("/api/projects", fetcher);
 
   const beneficiaries = Array.isArray(beneficiariesData) ? beneficiariesData : [];
   const ngos = Array.isArray(ngosData) ? ngosData : [];
   const records = Array.isArray(recordsData) ? recordsData : [];
+  const projects = Array.isArray(projectsData) ? projectsData : [];
 
-  const loading = benLoading || ngosLoading || recordsLoading;
+  const loading = benLoading || ngosLoading || recordsLoading || projectsLoading;
 
   const activeBeneficiaries = beneficiaries.filter(
     (b) => b.status === "Active"
   ).length;
   const activeNgos = ngos.filter((n) => n.status === "Active").length;
-  const activeRecords = records.filter(
+  const activeEnrollments = records.filter(
     (r) => r.status === "Active"
   ).length;
+  const activeProjects = projects.filter((p) => p.status === "Active").length;
 
   const filteredRecords = records
     .filter((r) => {
@@ -81,7 +91,8 @@ export default function Dashboard() {
         return (
           r.beneficiary_name?.toLowerCase().includes(q) ||
           r.ngo_name?.toLowerCase().includes(q) ||
-          r.service_name?.toLowerCase().includes(q)
+          r.project_title?.toLowerCase().includes(q) ||
+          r.aoi_category?.toLowerCase().includes(q)
         );
       }
       return true;
@@ -123,7 +134,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="no-print">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-blue-600 text-white rounded-xl p-6 shadow-md flex items-center gap-4">
             <div className="p-3 bg-white/20 rounded-lg">
               <Users size={24} />
@@ -152,9 +163,20 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-purple-100 text-sm font-medium uppercase tracking-wide">
-                Active Support Records
+                Active Enrollments
               </p>
-              <p className="text-4xl font-bold">{activeRecords}</p>
+              <p className="text-4xl font-bold">{activeEnrollments}</p>
+            </div>
+          </div>
+          <div className="bg-orange-500 text-white rounded-xl p-6 shadow-md flex items-center gap-4">
+            <div className="p-3 bg-white/20 rounded-lg">
+              <ClipboardList size={24} />
+            </div>
+            <div>
+              <p className="text-orange-100 text-sm font-medium uppercase tracking-wide">
+                Active Projects
+              </p>
+              <p className="text-4xl font-bold">{activeProjects}</p>
             </div>
           </div>
         </div>
@@ -199,10 +221,13 @@ export default function Dashboard() {
                   Beneficiary
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Project Title
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
                   NGO
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Service
+                  AOI Category
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   Start Date
@@ -216,21 +241,22 @@ export default function Dashboard() {
               {filteredRecords.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-gray-500"
                   >
-                    No support records found.
+                    No enrollments found.
                   </td>
                 </tr>
               ) : (
                 filteredRecords.map((r, idx) => (
                   <tr
-                    key={`${r.record_id}-${idx}`}
+                    key={`${r.enrollment_id}-${idx}`}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
                     <td className="px-4 py-3">{r.beneficiary_name}</td>
+                    <td className="px-4 py-3">{r.project_title}</td>
                     <td className="px-4 py-3">{r.ngo_name}</td>
-                    <td className="px-4 py-3">{r.service_name}</td>
+                    <td className="px-4 py-3">{r.aoi_category}</td>
                     <td className="px-4 py-3">{r.start_date}</td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
                   </tr>

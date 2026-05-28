@@ -27,11 +27,12 @@ interface Beneficiary {
   photo_url?: string;
 }
 
-const CATEGORIES = ["Women with children", "Disabled", "Elderly", "Other"];
+const CATEGORIES = ["Women with children", "Disabled", "Elderly", "Child", "Other"];
 const SUB_LABELS: Record<string, string> = {
   "Women with children": "Number of children",
   Disabled: "Disability type",
   Elderly: "Age details",
+  Child: "Child details",
   Other: "Sub details",
 };
 
@@ -62,12 +63,18 @@ export default function BeneficiariesPage() {
     full_name: "",
     sex: "Female",
     age: "",
+    date_of_birth: "",
     kebele: "",
+    woreda: "",
+    house_no: "",
     phone: "",
     id_type: "Kebele ID",
     id_number: "",
     category: "",
     sub_details: "",
+    family_size: "",
+    occupation: "",
+    average_income: "",
     notes: "",
     photo_url: "",
   });
@@ -78,7 +85,7 @@ export default function BeneficiariesPage() {
     if (!form.full_name.trim()) errs.full_name = "Full name is required";
     if (!form.category) errs.category = "Category is required";
     if (!form.id_number.trim()) errs.id_number = "ID number is required";
-    if (form.id_type === "Fayda" && form.id_number.length !== 12)
+    if (form.id_type === "Fayda" && form.id_number.length !== 16)
       errs.id_number = "Fayda ID must be exactly 12 digits";
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -99,12 +106,18 @@ export default function BeneficiariesPage() {
         full_name: "",
         sex: "Female",
         age: "",
+        date_of_birth: "",
         kebele: "",
+        woreda: "",
+        house_no: "",
         phone: "",
         id_type: "Kebele ID",
         id_number: "",
         category: "",
         sub_details: "",
+        family_size: "",
+        occupation: "",
+        average_income: "",
         notes: "",
         photo_url: "",
       });
@@ -360,12 +373,48 @@ export default function BeneficiariesPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    value={form.date_of_birth}
+                    onChange={(e) => updateField("date_of_birth", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Woreda
+                  </label>
+                  <input
+                    type="text"
+                    value={form.woreda}
+                    onChange={(e) => updateField("woreda", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Kebele
                   </label>
                   <input
                     type="text"
                     value={form.kebele}
                     onChange={(e) => updateField("kebele", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    House No.
+                  </label>
+                  <input
+                    type="text"
+                    value={form.house_no}
+                    onChange={(e) => updateField("house_no", e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -418,7 +467,7 @@ export default function BeneficiariesPage() {
                   ID Number <span className="text-red-500">*</span>
                   {form.id_type === "Fayda" && (
                     <span className="text-gray-400 font-normal ml-1">
-                      (12 digits required)
+                      (16 digits required)
                     </span>
                   )}
                 </label>
@@ -464,6 +513,42 @@ export default function BeneficiariesPage() {
                   onChange={(e) => updateField("sub_details", e.target.value)}
                   className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Family Size
+                  </label>
+                  <input
+                    type="number"
+                    value={form.family_size}
+                    onChange={(e) => updateField("family_size", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Occupation
+                  </label>
+                  <input
+                    type="text"
+                    value={form.occupation}
+                    onChange={(e) => updateField("occupation", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Avg Income
+                  </label>
+                  <input
+                    type="number"
+                    value={form.average_income}
+                    onChange={(e) => updateField("average_income", e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>

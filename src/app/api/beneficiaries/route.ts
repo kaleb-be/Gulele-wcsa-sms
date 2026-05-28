@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSheetData, appendRow, generateId } from "@/lib/sheets";
+import { auth } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,46 +25,49 @@ export async function GET(request: NextRequest) {
           b.kebele?.toLowerCase().includes(search)
       );
     }
-    if (category) {
-      beneficiaries = beneficiaries.filter((b: any) => b.category === category);
-    }
-    if (status) {
-      beneficiaries = beneficiaries.filter((b: any) => b.status === status);
-    }
-    if (sex) {
-      beneficiaries = beneficiaries.filter((b: any) => b.sex === sex);
-    }
-    if (kebele) {
-      beneficiaries = beneficiaries.filter((b: any) => b.kebele?.toLowerCase().includes(kebele));
-    }
+    if (category) beneficiaries = beneficiaries.filter((b: any) => b.category === category);
+    if (status) beneficiaries = beneficiaries.filter((b: any) => b.status === status);
+    if (sex) beneficiaries = beneficiaries.filter((b: any) => b.sex === sex);
+    if (kebele) beneficiaries = beneficiaries.filter((b: any) => b.kebele?.toLowerCase().includes(kebele));
 
     return NextResponse.json(beneficiaries);
   } catch (error) {
+    console.error("GET /api/beneficiaries error:", error);
     return NextResponse.json({ error: "Failed to fetch beneficiaries" }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await auth();
+    const registeredBy = (session?.user as any)?.name || "";
+
     const body = await request.json();
     const {
       full_name,
       sex,
       age,
+      date_of_birth,
       kebele,
+      woreda,
+      house_no,
       phone,
       id_type,
       id_number,
       category,
       sub_details,
-      registered_by,
-      status,
+      family_size,
+      occupation,
+      average_income,
       notes,
       photo_url,
     } = body;
 
     if (!full_name || !id_number) {
-      return NextResponse.json({ error: "Full name and ID number are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Full name and ID number are required" },
+        { status: 400 }
+      );
     }
 
     const ben_id = await generateId("BEN", "beneficiaries");
@@ -74,21 +78,28 @@ export async function POST(request: NextRequest) {
       full_name,
       sex || "",
       age?.toString() || "",
+      date_of_birth || "",
       kebele || "",
+      woreda || "",
+      house_no || "",
       phone || "",
       id_type || "Kebele ID",
       id_number,
       category || "",
       sub_details || "",
+      family_size?.toString() || "",
+      occupation || "",
+      average_income?.toString() || "",
       registered_date,
-      registered_by || "",
-      status || "Active",
-      notes || "",
+      registeredBy,
+      "Active",
       photo_url || "",
+      notes || "",
     ]);
 
     return NextResponse.json({ ben_id, full_name });
   } catch (error) {
+    console.error("POST /api/beneficiaries error:", error);
     return NextResponse.json({ error: "Failed to create beneficiary" }, { status: 500 });
   }
 }

@@ -15,12 +15,18 @@ interface Beneficiary {
   full_name: string;
   sex: string;
   age: string;
+  date_of_birth: string;
   kebele: string;
+  woreda: string;
+  house_no: string;
   phone: string;
   id_type: string;
   id_number: string;
   category: string;
   sub_details: string;
+  family_size: string;
+  occupation: string;
+  average_income: string;
   registered_date: string;
   registered_by: string;
   status: string;
@@ -28,19 +34,19 @@ interface Beneficiary {
   photo_url?: string;
 }
 
-interface SupportRecord {
-  record_id: string;
+interface Enrollment {
+  enrollment_id: string;
   ben_id: string;
+  project_id: string;
   ngo_id: string;
-  service_id: string;
+  aoi_category: string;
   start_date: string;
   end_date: string;
   status: string;
-  assigned_by: string;
+  enrolled_by: string;
   notes: string;
+  project_title: string;
   ngo_name: string;
-  service_name: string;
-  beneficiary_name: string;
 }
 
 export default function BeneficiaryProfile() {
@@ -53,8 +59,8 @@ export default function BeneficiaryProfile() {
     fetcher
   );
 
-  const { data: recordsData, error: recError, isLoading: recLoading, mutate: mutateRecs } = useSWR<SupportRecord[]>(
-    id ? `/api/support-records?ben_id=${id}` : null,
+  const { data: recordsData, error: recError, isLoading: recLoading, mutate: mutateRecs } = useSWR<Enrollment[]>(
+    id ? `/api/enrollments?ben_id=${id}` : null,
     fetcher
   );
 
@@ -72,19 +78,19 @@ export default function BeneficiaryProfile() {
     }
   };
 
-  const handleUpdateRecord = async (recordId: string, updates: Partial<SupportRecord>) => {
-    setUpdatingRecordId(recordId);
+  const handleUpdateRecord = async (enrollmentId: string, updates: Partial<Enrollment>) => {
+    setUpdatingRecordId(enrollmentId);
     try {
-      const res = await fetch(`/api/support-records/${recordId}`, {
+      const res = await fetch(`/api/enrollments/${enrollmentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error("Failed to update record");
-      toast.success("Support record updated");
+      if (!res.ok) throw new Error("Failed to update enrollment");
+      toast.success("Enrollment updated");
       mutateRecs();
     } catch (err) {
-      toast.error("Failed to update record");
+      toast.error("Failed to update enrollment");
     } finally {
       setUpdatingRecordId(null);
     }
@@ -245,7 +251,7 @@ export default function BeneficiaryProfile() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8 print:shadow-none print:border print:border-gray-200">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 mb-6 pb-6 border-b border-gray-100">
           <div className="flex-shrink-0">
             {editing ? (
@@ -343,6 +349,40 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
+            <span className="text-gray-500 block">Date of Birth</span>
+            {editing ? (
+              <input
+                type="date"
+                value={editForm.date_of_birth || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, date_of_birth: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.date_of_birth || "—"}
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text-gray-500 block">Woreda</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.woreda || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, woreda: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.woreda || "—"}
+              </span>
+            )}
+          </div>
+          <div>
             <span className="text-gray-500 block">Kebele</span>
             {editing ? (
               <input
@@ -356,6 +396,23 @@ export default function BeneficiaryProfile() {
             ) : (
               <span className="font-medium text-gray-800">
                 {beneficiary.kebele}
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text-gray-500 block">House No.</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.house_no || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, house_no: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.house_no || "—"}
               </span>
             )}
           </div>
@@ -453,6 +510,57 @@ export default function BeneficiaryProfile() {
               <span>{statusBadge(beneficiary.status)}</span>
             )}
           </div>
+          <div>
+            <span className="text-gray-500 block">Family Size</span>
+            {editing ? (
+              <input
+                type="number"
+                value={editForm.family_size || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, family_size: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.family_size || "—"}
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text-gray-500 block">Occupation</span>
+            {editing ? (
+              <input
+                type="text"
+                value={editForm.occupation || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, occupation: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.occupation || "—"}
+              </span>
+            )}
+          </div>
+          <div>
+            <span className="text-gray-500 block">Avg Income</span>
+            {editing ? (
+              <input
+                type="number"
+                value={editForm.average_income || ""}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, average_income: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            ) : (
+              <span className="font-medium text-gray-800">
+                {beneficiary.average_income || "—"}
+              </span>
+            )}
+          </div>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-100">
           <span className="text-gray-500 block text-sm">Notes</span>
@@ -474,24 +582,24 @@ export default function BeneficiaryProfile() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden print:shadow-none print:border print:border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 print:bg-white">
           <h2 className="text-lg font-semibold text-gray-800">
-            Support Records
+            Current Enrollments
           </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-gray-50 border-b border-gray-200 print:bg-white">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Record ID
+                  Project Title
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   NGO Name
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Service
+                  Area of Intervention
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   Start Date
@@ -514,21 +622,21 @@ export default function BeneficiaryProfile() {
                     colSpan={7}
                     className="px-4 py-8 text-center text-gray-500"
                   >
-                    No support records found.
+                    No enrollments found.
                   </td>
                 </tr>
               ) : (
                 records.map((r) => (
                   <tr
-                    key={r.record_id}
+                    key={r.enrollment_id}
                     className="border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">
-                      {r.record_id}
+                    <td className="px-4 py-3 text-gray-800 font-medium">
+                      {r.project_title}
                     </td>
                     <td className="px-4 py-3 text-gray-800">{r.ngo_name}</td>
                     <td className="px-4 py-3 text-gray-600">
-                      {r.service_name}
+                      {r.aoi_category}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{r.start_date}</td>
                     <td className="px-4 py-3 text-gray-600">
@@ -536,26 +644,29 @@ export default function BeneficiaryProfile() {
                     </td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
                     <td className="px-4 py-3 text-right">
-                      {r.status === "Pending" && (
-                        <button
-                          onClick={() => handleUpdateRecord(r.record_id, { status: "Active" })}
-                          disabled={updatingRecordId === r.record_id}
-                          className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50"
-                        >
-                          Activate
-                        </button>
-                      )}
                       {r.status === "Active" && (
-                        <button
-                          onClick={() => {
-                            const endDate = new Date().toISOString().split("T")[0];
-                            handleUpdateRecord(r.record_id, { status: "Terminated", end_date: endDate });
-                          }}
-                          disabled={updatingRecordId === r.record_id}
-                          className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-                        >
-                          Terminate
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              const endDate = new Date().toISOString().split("T")[0];
+                              handleUpdateRecord(r.enrollment_id, { status: "Completed", end_date: endDate });
+                            }}
+                            disabled={updatingRecordId === r.enrollment_id}
+                            className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded font-bold uppercase hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            Complete
+                          </button>
+                          <button
+                            onClick={() => {
+                              const endDate = new Date().toISOString().split("T")[0];
+                              handleUpdateRecord(r.enrollment_id, { status: "Cancelled", end_date: endDate });
+                            }}
+                            disabled={updatingRecordId === r.enrollment_id}
+                            className="text-[10px] bg-red-600 text-white px-2 py-1 rounded font-bold uppercase hover:bg-red-700 disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

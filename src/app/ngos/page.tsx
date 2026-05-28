@@ -11,17 +11,14 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 interface NGO {
   ngo_id: string;
   name: string;
-  focus_areas: string;
   contact_person: string;
   phone: string;
   email: string;
   registration_number: string;
-  start_date: string;
   status: string;
   notes: string;
 }
 
-const FOCUS_OPTIONS = ["Women", "Children", "Disabled", "Elderly"];
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
 export default function NGOsPage() {
@@ -43,24 +40,15 @@ export default function NGOsPage() {
 
   const [form, setForm] = useState({
     name: "",
-    focus_areas: [] as string[],
     contact_person: "",
     phone: "",
     email: "",
     registration_number: "",
-    start_date: "",
     status: "Active",
+    notes: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const toggleFocus = (area: string) => {
-    setForm((prev) => ({
-      ...prev,
-      focus_areas: prev.focus_areas.includes(area)
-        ? prev.focus_areas.filter((a) => a !== area)
-        : [...prev.focus_areas, area],
-    }));
-  };
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -76,22 +64,18 @@ export default function NGOsPage() {
     const promise = fetch("/api/ngos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        focus_areas: form.focus_areas.join(", "),
-      }),
+      body: JSON.stringify(form),
     }).then(async (res) => {
       if (!res.ok) throw new Error("Failed to create");
       setShowModal(false);
       setForm({
         name: "",
-        focus_areas: [],
         contact_person: "",
         phone: "",
         email: "",
         registration_number: "",
-        start_date: "",
         status: "Active",
+        notes: "",
       });
       mutate();
     });
@@ -137,7 +121,7 @@ export default function NGOsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search by name or focus areas..."
+            placeholder="Search by name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -166,7 +150,7 @@ export default function NGOsPage() {
                   Name
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Focus Areas
+                  Contact Person
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   Status
@@ -210,7 +194,7 @@ export default function NGOsPage() {
                       {ngo.name}
                     </td>
                     <td className="px-4 py-3 text-gray-600">
-                      {ngo.focus_areas}
+                      {ngo.contact_person}
                     </td>
                     <td className="px-4 py-3">{statusBadge(ngo.status)}</td>
                     <td className="px-4 py-3">
@@ -257,28 +241,6 @@ export default function NGOsPage() {
                 {errors.name && (
                   <p className="text-red-500 text-xs mt-1">{errors.name}</p>
                 )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Focus Areas
-                </label>
-                <div className="flex flex-wrap gap-4">
-                  {FOCUS_OPTIONS.map((area) => (
-                    <label
-                      key={area}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={form.focus_areas.includes(area)}
-                        onChange={() => toggleFocus(area)}
-                        className="accent-blue-900"
-                      />
-                      {area}
-                    </label>
-                  ))}
-                </div>
               </div>
 
               <div>
@@ -340,14 +302,14 @@ export default function NGOsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date
+                  Notes
                 </label>
-                <input
-                  type="date"
-                  value={form.start_date}
+                <textarea
+                  value={form.notes}
                   onChange={(e) =>
-                    setForm({ ...form, start_date: e.target.value })
+                    setForm({ ...form, notes: e.target.value })
                   }
+                  rows={2}
                   className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

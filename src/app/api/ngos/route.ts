@@ -1,33 +1,48 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSheetData, appendRow, generateId } from "@/lib/sheets";
+import { auth } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get("status");
+    const search = searchParams.get("search")?.toLowerCase() || "";
+
     const rows = await getSheetData("ngos");
-    const headers = rows[0] ?? [];
-    const ngos = rows.slice(1).map((row) =>
-      Object.fromEntries(headers.map((h, i) => [h, row[i] ?? ""]))
-    );
-    return NextResponse.json(ngos);
+    const headers = rows[0] || [];
+    let data = rows.slice(1).map((row) => {
+      const obj: any = {};
+      headers.forEach((header, index) => {
+        obj[header] = row[index] || "";
+      });
+      return obj;
+    });
+
+    if (status) data = data.filter((ngo: any) => ngo.status === status);
+    if (search) {
+      data = data.filter((ngo: any) =>
+        ngo.name?.toLowerCase().includes(search) ||
+        ngo.contact_person?.toLowerCase().includes(search)
+      );
+    }
+
+    return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch NGOs" }, { status: 500 });
+    console.error("GET /api/ngos error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const body = await request.json();
-    const {
-      name,
-      focus_areas,
-      contact_person,
-      phone,
-      email,
-      registration_number,
-      start_date,
-      status,
-      notes,
-    } = body;
+    const { name, contact_person, phone, email, registration_number, status, notes } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -38,18 +53,17 @@ export async function POST(request: NextRequest) {
     await appendRow("ngos", [
       ngo_id,
       name,
-      focus_areas || "",
       contact_person || "",
       phone || "",
       email || "",
       registration_number || "",
-      start_date || "",
       status || "Active",
       notes || "",
     ]);
 
-    return NextResponse.json({ ngo_id, name });
+    return NextResponse.json({ message: "NGO created successfully", ngo_id });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to create NGO" }, { status: 500 });
+    console.error("POST /api/ngos error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
