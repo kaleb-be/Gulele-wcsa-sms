@@ -3,9 +3,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { Printer, Search, Users, Home, ClipboardList } from "lucide-react";
-
-// TODO: IMPLEMENT LOCALIZATION IN AMHARIC
-
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -59,6 +57,7 @@ interface Project {
 }
 
 export default function Dashboard() {
+  const { t } = useLocale();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -141,7 +140,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">
-                Active Beneficiaries
+                {t("dashboard.activeBeneficiaries")}
               </p>
               <p className="text-4xl font-bold">{activeBeneficiaries}</p>
             </div>
@@ -152,7 +151,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-green-100 text-sm font-medium uppercase tracking-wide">
-                Active NGOs
+                {t("dashboard.activeNgos")}
               </p>
               <p className="text-4xl font-bold">{activeNgos}</p>
             </div>
@@ -163,7 +162,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-purple-100 text-sm font-medium uppercase tracking-wide">
-                Active Enrollments
+                {t("dashboard.activeEnrollments")}
               </p>
               <p className="text-4xl font-bold">{activeEnrollments}</p>
             </div>
@@ -174,7 +173,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-orange-100 text-sm font-medium uppercase tracking-wide">
-                Active Projects
+                {t("dashboard.activeProjects")}
               </p>
               <p className="text-4xl font-bold">{activeProjects}</p>
             </div>
@@ -186,7 +185,7 @@ export default function Dashboard() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
-              placeholder="Search records..."
+              placeholder={t("dashboard.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -197,17 +196,17 @@ export default function Dashboard() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">All Statuses</option>
-            <option value="Active">Active</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
+            <option value="">{t("dashboard.allStatuses")}</option>
+            <option value="Active">{t("statuses.active")}</option>
+            <option value="Completed">{t("statuses.completed")}</option>
+            <option value="Cancelled">{t("statuses.cancelled")}</option>
           </select>
           <button
             onClick={() => window.print()}
             className="flex items-center gap-2 ml-auto bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
           >
             <Printer size={18} />
-            Print
+            {t("dashboard.print")}
           </button>
         </div>
       </div>
@@ -218,22 +217,22 @@ export default function Dashboard() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Beneficiary
+                  {t("table.beneficiary")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Project Title
+                  {t("table.projectTitle")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  NGO
+                  {t("table.ngo")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  AOI Category
+                  {t("table.aoiCategory")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Start Date
+                  {t("table.startDate")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Status
+                  {t("common.status")}
                 </th>
               </tr>
             </thead>
@@ -244,7 +243,7 @@ export default function Dashboard() {
                     colSpan={6}
                     className="px-4 py-8 text-center text-gray-500"
                   >
-                    No enrollments found.
+                    {t("dashboard.noRecords")}
                   </td>
                 </tr>
               ) : (

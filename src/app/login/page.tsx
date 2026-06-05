@@ -4,6 +4,8 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, User, Loader2 } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
+import LanguageToggle from "@/components/LanguageToggle";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useLocale();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,30 +29,34 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Incorrect username or password");
+        setError(t("login.error"));
       } else {
         await new Promise((resolve) => setTimeout(resolve, 500));
         window.location.href = "/";      }
     } catch (err) {
-      setError("An unexpected error occurred");
+      setError(t("login.unexpectedError"));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 relative">
+
       <div className="max-w-sm w-full space-y-8">
         <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-blue-900">WCSA Office</h1>
-            <p className="text-gray-500 text-sm">Gullele Sub-City</p>
+          <div className="flex items-start justify-between mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-blue-900">{t("login.title")}</h1>
+              <p className="text-gray-500 text-sm">{t("login.subtitle")}</p>
+            </div>
+            <LanguageToggle />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
+                {t("login.username")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -60,7 +67,7 @@ export default function LoginPage() {
                   required
                   autoComplete="username"
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-black"
-                  placeholder="Enter your username"
+                  placeholder={t("login.usernamePlaceholder")}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -69,7 +76,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
+                {t("login.password")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -112,10 +119,10 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                  Signing in...
+                  {t("login.signingIn")}
                 </>
               ) : (
-                "Sign In"
+                t("login.signIn")
               )}
             </button>
           </form>
