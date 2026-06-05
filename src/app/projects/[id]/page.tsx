@@ -4,18 +4,35 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import toast from "react-hot-toast";
-import { ArrowLeft, UserPlus, Search, Printer, Pencil, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  UserPlus,
+  Search,
+  Printer,
+  Pencil,
+  XCircle,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const AOI_CATEGORIES = [
-  "Education", "Economic Empowerment", "Health and Nutrition",
-  "Psychosocial Support", "Physical Rehabilitation", "Family Empowerment",
-  "Child Development", "Elderly Care", "Disability Support", "Legal Aid",
-  "Housing and Shelter"
+  "Food Support",
+  "Medical Aid",
+  "Education Support",
+  "Disability Support",
+  "Elderly Support",
+  "Women Support",
+  "Child Protection",
+  "Emergency Support",
 ];
+// [  "Education", "Economic Empowerment", "Health and Nutrition",
+//   "Psychosocial Support", "Physical Rehabilitation", "Family Empowerment",
+//   "Child Development", "Elderly Care", "Disability Support", "Legal Aid",
+//   "Housing and Shelter"
+// ];
 
 interface Project {
   project_id: string;
@@ -58,22 +75,27 @@ interface Beneficiary {
 }
 
 export default function ProjectDetailPage() {
+  const { t } = useLocale();
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
 
-  const { data: projectData, error: projectError, isLoading: projectLoading, mutate: mutateProject } =
-    useSWR<{ project: Project; activeEnrollments: number; enrollments: Enrollment[] }>(
-      id ? `/api/projects/${id}` : null,
-      fetcher
-    );
+  const {
+    data: projectData,
+    error: projectError,
+    isLoading: projectLoading,
+    mutate: mutateProject,
+  } = useSWR<{
+    project: Project;
+    activeEnrollments: number;
+    enrollments: Enrollment[];
+  }>(id ? `/api/projects/${id}` : null, fetcher);
 
-  const { data: enrollmentsData, mutate: mutateEnrollments } = useSWR<Enrollment[]>(
-    id ? `/api/enrollments?project_id=${id}` : null,
-    fetcher
-  );
+  const { data: enrollmentsData, mutate: mutateEnrollments } = useSWR<
+    Enrollment[]
+  >(id ? `/api/enrollments?project_id=${id}` : null, fetcher);
 
   // Enroll modal
   const [showEnrollModal, setShowEnrollModal] = useState(false);
@@ -91,21 +113,30 @@ export default function ProjectDetailPage() {
   const [editForm, setEditForm] = useState<Partial<Project>>({});
 
   // Bulk actions
-  const [selectedEnrollments, setSelectedEnrollments] = useState<Set<string>>(new Set());
+  const [selectedEnrollments, setSelectedEnrollments] = useState<Set<string>>(
+    new Set(),
+  );
   const [bulkProcessing, setBulkProcessing] = useState(false);
 
   const { data: benResults } = useSWR<Beneficiary[]>(
     benSearch.length > 2 ? `/api/beneficiaries?search=${benSearch}` : null,
-    fetcher
+    fetcher,
   );
 
-  if (projectLoading) return <div className="p-8 text-center text-gray-500">Loading project details...</div>;
-  if (projectError || !projectData?.project) return <div className="p-8 text-center text-red-500">Failed to load project.</div>;
+  if (projectLoading)
+    return (
+      <div className="p-8 text-center text-gray-500">{t("common.loading")}</div>
+    );
+  if (projectError || !projectData?.project)
+    return (
+      <div className="p-8 text-center text-red-500">{t("common.noData")}</div>
+    );
 
   const { project, activeEnrollments } = projectData;
   const enrollments = Array.isArray(enrollmentsData) ? enrollmentsData : [];
   const quotaTotal = parseInt(project.quota_total) || 0;
-  const progress = quotaTotal > 0 ? Math.min(100, (activeEnrollments / quotaTotal) * 100) : 0;
+  const progress =
+    quotaTotal > 0 ? Math.min(100, (activeEnrollments / quotaTotal) * 100) : 0;
 
   const openEditModal = () => {
     setEditForm({ ...project });
@@ -127,13 +158,16 @@ export default function ProjectDetailPage() {
       const res = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...editForm, quota_total: String(newQuotaTotal) }),
+        body: JSON.stringify({
+          ...editForm,
+          quota_total: String(newQuotaTotal),
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Failed to update");
       }
-      toast.success("Project updated");
+      toast.success(t("common.save"));
       setShowEditModal(false);
       mutateProject();
     } catch (err: any) {
@@ -144,7 +178,7 @@ export default function ProjectDetailPage() {
   };
 
   const handleTerminate = async () => {
-    if (!confirm(`Terminate project "${project.project_title}"? This will mark it as Terminated. Active enrollments must be resolved first.`)) return;
+    if (!confirm(t("projects.terminateConfirm"))) return;
     try {
       const res = await fetch(`/api/projects/${id}`, {
         method: "PATCH",
@@ -153,7 +187,7 @@ export default function ProjectDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to terminate");
-      toast.success("Project terminated");
+      toast.success(t("projects.terminate"));
       mutateProject();
     } catch (err: any) {
       toast.error(err.message);
@@ -175,15 +209,15 @@ export default function ProjectDetailPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.error === "duplicate") {
-          toast.error(`Duplicate: already enrolled in ${data.conflictingEnrollment.project_title}`);
+          toast.error(t("enroll.duplicateTitle"));
         } else if (data.error === "quota_exceeded") {
-          toast.error("Project quota exceeded");
+          toast.error(t("enroll.quotaTitle"));
         } else {
           throw new Error(data.message || "Failed to enroll");
         }
         return;
       }
-      toast.success("Beneficiary enrolled successfully");
+      toast.success(t("enroll.enrollmentSuccess"));
       setShowEnrollModal(false);
       setBenSearch("");
       mutateEnrollments();
@@ -215,7 +249,8 @@ export default function ProjectDetailPage() {
 
   const handleBulkTerminate = async () => {
     if (selectedEnrollments.size === 0) return;
-    if (!confirm(`Terminate ${selectedEnrollments.size} enrollment(s)?`)) return;
+    if (!confirm(`Terminate ${selectedEnrollments.size} enrollment(s)?`))
+      return;
     setBulkProcessing(true);
     const today = new Date().toISOString().split("T")[0];
     try {
@@ -225,8 +260,8 @@ export default function ProjectDetailPage() {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: "Cancelled", end_date: today }),
-          })
-        )
+          }),
+        ),
       );
       toast.success(`${selectedEnrollments.size} enrollment(s) terminated`);
       setSelectedEnrollments(new Set());
@@ -239,8 +274,11 @@ export default function ProjectDetailPage() {
     }
   };
 
-  const activeEnrollmentsList = enrollments.filter((e) => e.status === "Active");
-  const allActiveSelected = activeEnrollmentsList.length > 0 &&
+  const activeEnrollmentsList = enrollments.filter(
+    (e) => e.status === "Active",
+  );
+  const allActiveSelected =
+    activeEnrollmentsList.length > 0 &&
     selectedEnrollments.size === activeEnrollmentsList.length;
 
   const statusBadge = (s: string) => {
@@ -251,7 +289,9 @@ export default function ProjectDetailPage() {
       Terminated: "bg-gray-100 text-gray-800",
     };
     return (
-      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[s] || "bg-gray-100 text-gray-800"}`}>
+      <span
+        className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[s] || "bg-gray-100 text-gray-800"}`}
+      >
         {s}
       </span>
     );
@@ -261,11 +301,16 @@ export default function ProjectDetailPage() {
     <div className="space-y-6">
       <div className="no-print flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">{project.project_title}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {project.project_title}
+            </h1>
             <p className="text-sm text-gray-500">{project.ngo_name}</p>
           </div>
           {statusBadge(project.status)}
@@ -273,29 +318,39 @@ export default function ProjectDetailPage() {
         <div className="flex items-center gap-2">
           {isAdmin && (
             <>
-              <button onClick={openEditModal}
-                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Pencil size={15} /> Edit
+              <button
+                onClick={openEditModal}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Pencil size={15} /> {t("projects.edit")}
               </button>
               {project.status === "Active" && (
-                <button onClick={handleTerminate}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">
-                  <XCircle size={15} /> Terminate
+                <button
+                  onClick={handleTerminate}
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  <XCircle size={15} /> {t("projects.terminate")}
                 </button>
               )}
             </>
           )}
-          <button onClick={() => window.print()}
-                  className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-            <Printer size={18} /> Print
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            <Printer size={18} /> {t("projects.print")}
           </button>
         </div>
       </div>
 
       <div className="print-only mb-8">
         <div className="text-center pb-4 border-b-2 border-gray-300">
-          <h2 className="text-xl font-bold text-gray-900">Women, Children and Social Affairs Office — Gullele Sub-City</h2>
-          <p className="text-sm text-gray-600 mt-1">Project Details & Enrollment List</p>
+          <h2 className="text-xl font-bold text-gray-900">
+            Women, Children and Social Affairs Office — Gullele Sub-City
+          </h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Project Details & Enrollment List
+          </p>
         </div>
       </div>
 
@@ -303,32 +358,60 @@ export default function ProjectDetailPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-xl shadow-md p-6 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-4 text-sm">
             <div>
-              <p className="text-gray-500 font-medium">NGO</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.ngoLabel")}
+              </p>
               <p className="text-gray-900 font-semibold">{project.ngo_name}</p>
             </div>
             <div>
-              <p className="text-gray-500 font-medium">AOI Category</p>
-              <p className="text-gray-900 font-semibold">{project.aoi_category}</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.aoiLabel")}
+              </p>
+              <p className="text-gray-900 font-semibold">
+                {project.aoi_category}
+              </p>
             </div>
             <div>
-              <p className="text-gray-500 font-medium">Area of Intervention</p>
-              <p className="text-gray-900 font-semibold">{project.area_of_intervention || "—"}</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.areaLabel")}
+              </p>
+              <p className="text-gray-900 font-semibold">
+                {project.area_of_intervention || "—"}
+              </p>
             </div>
             <div>
-              <p className="text-gray-500 font-medium">Operation Area / Woreda</p>
-              <p className="text-gray-900 font-semibold">{project.operation_area || "—"} {project.woreda ? `/ ${project.woreda}` : ""}</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.operationLabel")}
+              </p>
+              <p className="text-gray-900 font-semibold">
+                {project.operation_area || "—"}{" "}
+                {project.woreda ? `/ ${project.woreda}` : ""}
+              </p>
             </div>
             <div>
-              <p className="text-gray-500 font-medium">Dates</p>
-              <p className="text-gray-900 font-semibold">{project.start_date || "—"} → {project.end_date || "Ongoing"}</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.datesLabel")}
+              </p>
+              <p className="text-gray-900 font-semibold">
+                {project.start_date || "—"} →{" "}
+                {project.end_date || t("projects.ongoing")}
+              </p>
             </div>
             <div>
-              <p className="text-gray-500 font-medium">Total Budget</p>
-              <p className="text-gray-900 font-semibold">{project.total_budget ? `${parseFloat(project.total_budget).toLocaleString()} ETB` : "N/A"}</p>
+              <p className="text-gray-500 font-medium">
+                {t("projects.budgetLabel")}
+              </p>
+              <p className="text-gray-900 font-semibold">
+                {project.total_budget
+                  ? `${parseFloat(project.total_budget).toLocaleString()} ETB`
+                  : t("common.na")}
+              </p>
             </div>
             {project.notes && (
               <div className="md:col-span-2">
-                <p className="text-gray-500 font-medium">Notes</p>
+                <p className="text-gray-500 font-medium">
+                  {t("projects.notes")}
+                </p>
                 <p className="text-gray-900">{project.notes}</p>
               </div>
             )}
@@ -338,7 +421,9 @@ export default function ProjectDetailPage() {
           <div className="bg-white rounded-xl shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-gray-800">Enrollments</h2>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {t("projects.enrollments")}
+                </h2>
                 {selectedEnrollments.size > 0 && (
                   <button
                     onClick={handleBulkTerminate}
@@ -346,7 +431,9 @@ export default function ProjectDetailPage() {
                     className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
                   >
                     <XCircle size={13} />
-                    {bulkProcessing ? "Processing..." : `Terminate ${selectedEnrollments.size} selected`}
+                    {bulkProcessing
+                      ? t("common.saving")
+                      : `${t("projects.terminate")} ${selectedEnrollments.size} selected`}
                   </button>
                 )}
               </div>
@@ -355,57 +442,85 @@ export default function ProjectDetailPage() {
                   onClick={() => setShowEnrollModal(true)}
                   className="no-print bg-blue-900 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors flex items-center gap-2"
                 >
-                  <UserPlus size={16} /> Enroll Beneficiary
+                  <UserPlus size={16} /> {t("projects.enrollBeneficiary")}
                 </button>
               )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                <tr className="border-b border-gray-100 text-gray-500">
-                  <th className="py-3 px-2 text-left w-8">
-                    <input
-                      type="checkbox"
-                      checked={allActiveSelected}
-                      onChange={toggleSelectAll}
-                      className="accent-blue-900"
-                    />
-                  </th>
-                  <th className="text-left py-3 px-2 font-medium">Beneficiary</th>
-                  <th className="text-left py-3 px-2 font-medium">Category</th>
-                  <th className="text-left py-3 px-2 font-medium">Kebele</th>
-                  <th className="text-left py-3 px-2 font-medium">Start Date</th>
-                  <th className="text-left py-3 px-2 font-medium">End Date</th>
-                  <th className="text-left py-3 px-2 font-medium">Status</th>
-                </tr>
+                  <tr className="border-b border-gray-100 text-gray-500">
+                    <th className="py-3 px-2 text-left w-8">
+                      <input
+                        type="checkbox"
+                        checked={allActiveSelected}
+                        onChange={toggleSelectAll}
+                        className="accent-blue-900"
+                      />
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("table.beneficiary")}
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("beneficiaries.category")}
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("beneficiaries.kebele")}
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("projects.startDate")}
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("projects.endDate")}
+                    </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("projects.status")}
+                    </th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-gray-700">
-                {enrollments.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-gray-400 italic">No enrollments yet.</td>
-                  </tr>
-                ) : (
-                  enrollments.map((enr) => (
-                    <tr key={enr.enrollment_id} className={selectedEnrollments.has(enr.enrollment_id) ? "bg-red-50" : ""}>
-                      <td className="py-3 px-2">
-                        {enr.status === "Active" && (
-                          <input
-                            type="checkbox"
-                            checked={selectedEnrollments.has(enr.enrollment_id)}
-                            onChange={() => toggleSelect(enr.enrollment_id)}
-                            className="accent-blue-900"
-                          />
-                        )}
+                  {enrollments.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-8 text-center text-gray-400 italic"
+                      >
+                        {t("projects.noEnrollments")}
                       </td>
-                      <td className="py-3 px-2 font-medium">{enr.full_name}</td>
-                      <td className="py-3 px-2">{enr.category}</td>
-                      <td className="py-3 px-2">{enr.kebele}</td>
-                      <td className="py-3 px-2">{enr.start_date}</td>
-                      <td className="py-3 px-2">{enr.end_date || "—"}</td>
-                      <td className="py-3 px-2">{statusBadge(enr.status)}</td>
                     </tr>
-                  ))
-                )}
+                  ) : (
+                    enrollments.map((enr) => (
+                      <tr
+                        key={enr.enrollment_id}
+                        className={
+                          selectedEnrollments.has(enr.enrollment_id)
+                            ? "bg-red-50"
+                            : ""
+                        }
+                      >
+                        <td className="py-3 px-2">
+                          {enr.status === "Active" && (
+                            <input
+                              type="checkbox"
+                              checked={selectedEnrollments.has(
+                                enr.enrollment_id,
+                              )}
+                              onChange={() => toggleSelect(enr.enrollment_id)}
+                              className="accent-blue-900"
+                            />
+                          )}
+                        </td>
+                        <td className="py-3 px-2 font-medium">
+                          {enr.full_name}
+                        </td>
+                        <td className="py-3 px-2">{enr.category}</td>
+                        <td className="py-3 px-2">{enr.kebele}</td>
+                        <td className="py-3 px-2">{enr.start_date}</td>
+                        <td className="py-3 px-2">{enr.end_date || "—"}</td>
+                        <td className="py-3 px-2">{statusBadge(enr.status)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -414,24 +529,49 @@ export default function ProjectDetailPage() {
 
         <div className="space-y-6 no-print">
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-sm font-bold text-gray-800 mb-4">Quota Utilization</h3>
+            <h3 className="text-sm font-bold text-gray-800 mb-4">
+              {t("projects.quotaUtilization")}
+            </h3>
             <div className="space-y-4">
               <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
-                <div className="bg-blue-600 h-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                <div
+                  className="bg-blue-600 h-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
               <p className="text-sm text-center font-medium text-gray-700">
-                {activeEnrollments} of {quotaTotal || "∞"} total slots filled
+                {activeEnrollments} {t("projects.slotsfilledMiddle")}{" "}
+                {quotaTotal || "∞"} {t("projects.slotsfilledEnd")}
               </p>
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-50">
                 {[
-                  { label: "Women", value: project.quota_women },
-                  { label: "Children", value: project.quota_children },
-                  { label: "Elderly", value: project.quota_elderly },
-                  { label: "Disabled", value: project.quota_disabled },
+                  {
+                    label: t("projects.quotaWomen"),
+                    value: project.quota_women,
+                  },
+                  {
+                    label: t("projects.quotaChildren"),
+                    value: project.quota_children,
+                  },
+                  {
+                    label: t("projects.quotaElderly"),
+                    value: project.quota_elderly,
+                  },
+                  {
+                    label: t("projects.quotaDisabled"),
+                    value: project.quota_disabled,
+                  },
                 ].map(({ label, value }) => (
-                  <div key={label} className="bg-gray-50 p-3 rounded-lg text-center">
-                    <p className="text-[10px] uppercase text-gray-500 font-bold">{label}</p>
-                    <p className="text-lg font-bold text-gray-800">{value || 0}</p>
+                  <div
+                    key={label}
+                    className="bg-gray-50 p-3 rounded-lg text-center"
+                  >
+                    <p className="text-[10px] uppercase text-gray-500 font-bold">
+                      {label}
+                    </p>
+                    <p className="text-lg font-bold text-gray-800">
+                      {value || 0}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -445,15 +585,28 @@ export default function ProjectDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-800">Enroll Beneficiary</h2>
-              <button onClick={() => { setShowEnrollModal(false); setBenSearch(""); }} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+              <h2 className="text-lg font-bold text-gray-800">
+                {t("enroll.title")}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowEnrollModal(false);
+                  setBenSearch("");
+                }}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                &times;
+              </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   type="text"
-                  placeholder="Search by name or ID..."
+                  placeholder={t("enroll.searchBeneficiary")}
                   className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                   value={benSearch}
                   onChange={(e) => setBenSearch(e.target.value)}
@@ -461,22 +614,34 @@ export default function ProjectDetailPage() {
               </div>
               <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-lg divide-y divide-gray-50">
                 {benSearch.length <= 2 ? (
-                  <p className="p-4 text-center text-gray-400 text-xs italic">Type at least 3 characters</p>
+                  <p className="p-4 text-center text-gray-400 text-xs italic">
+                    {t("enroll.typeToSearch")}
+                  </p>
                 ) : !benResults || benResults.length === 0 ? (
-                  <p className="p-4 text-center text-gray-400 text-xs italic">No beneficiaries found</p>
+                  <p className="p-4 text-center text-gray-400 text-xs italic">
+                    {t("enroll.noResults")}
+                  </p>
                 ) : (
                   benResults.map((ben) => (
-                    <div key={ben.ben_id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                    <div
+                      key={ben.ben_id}
+                      className="p-3 flex items-center justify-between hover:bg-gray-50"
+                    >
                       <div>
-                        <p className="text-sm font-bold text-gray-800">{ben.full_name}</p>
-                        <p className="text-[10px] text-gray-500">{ben.category} • Kebele {ben.kebele}</p>
+                        <p className="text-sm font-bold text-gray-800">
+                          {ben.full_name}
+                        </p>
+                        <p className="text-[10px] text-gray-500">
+                          {ben.category} • {t("beneficiaries.kebele")}{" "}
+                          {ben.kebele}
+                        </p>
                       </div>
                       <button
                         onClick={() => handleEnroll(ben.ben_id)}
                         disabled={enrolling}
                         className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded font-bold hover:bg-blue-200 disabled:opacity-50"
                       >
-                        Enroll
+                        {t("enroll.completeEnrollment")}
                       </button>
                     </div>
                   ))
@@ -484,16 +649,33 @@ export default function ProjectDetailPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Start Date</label>
-                  <input type="date" value={enrollForm.start_date}
-                         onChange={(e) => setEnrollForm({ ...enrollForm, start_date: e.target.value })}
-                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    {t("enroll.startDate")}
+                  </label>
+                  <input
+                    type="date"
+                    value={enrollForm.start_date}
+                    onChange={(e) =>
+                      setEnrollForm({
+                        ...enrollForm,
+                        start_date: e.target.value,
+                      })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">End Date (Optional)</label>
-                  <input type="date" value={enrollForm.end_date}
-                         onChange={(e) => setEnrollForm({ ...enrollForm, end_date: e.target.value })}
-                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    {t("enroll.endDate")}
+                  </label>
+                  <input
+                    type="date"
+                    value={enrollForm.end_date}
+                    onChange={(e) =>
+                      setEnrollForm({ ...enrollForm, end_date: e.target.value })
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  />
                 </div>
               </div>
             </div>
@@ -506,81 +688,168 @@ export default function ProjectDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h2 className="text-lg font-bold text-gray-800">Edit Project</h2>
-              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+              <h2 className="text-lg font-bold text-gray-800">
+                {t("projects.editProject")}
+              </h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                &times;
+              </button>
             </div>
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project Title *</label>
-                <input required type="text" value={editForm.project_title || ""}
-                       onChange={(e) => setEditForm({ ...editForm, project_title: e.target.value })}
-                       className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("projects.projectTitle")} *
+                </label>
+                <input
+                  required
+                  type="text"
+                  value={editForm.project_title || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, project_title: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">AOI Category</label>
-                  <select value={editForm.aoi_category || ""}
-                          onChange={(e) => setEditForm({ ...editForm, aoi_category: e.target.value })}
-                          className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-                    {AOI_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.aoiCategory")}
+                  </label>
+                  <select
+                    value={editForm.aoi_category || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, aoi_category: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    {AOI_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Area of Intervention</label>
-                  <input type="text" value={editForm.area_of_intervention || ""}
-                         onChange={(e) => setEditForm({ ...editForm, area_of_intervention: e.target.value })}
-                         className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.areaOfIntervention")}
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.area_of_intervention || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        area_of_intervention: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Operation Area</label>
-                  <input type="text" value={editForm.operation_area || ""}
-                         onChange={(e) => setEditForm({ ...editForm, operation_area: e.target.value })}
-                         className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.operationArea")}
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.operation_area || ""}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        operation_area: e.target.value,
+                      })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Woreda</label>
-                  <input type="text" value={editForm.woreda || ""}
-                         onChange={(e) => setEditForm({ ...editForm, woreda: e.target.value })}
-                         className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.woreda")}
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.woreda || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, woreda: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input type="date" value={editForm.start_date || ""}
-                         onChange={(e) => setEditForm({ ...editForm, start_date: e.target.value })}
-                         className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.startDate")}
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.start_date || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, start_date: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <input type="date" value={editForm.end_date || ""}
-                         onChange={(e) => setEditForm({ ...editForm, end_date: e.target.value })}
-                         className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("projects.endDate")}
+                  </label>
+                  <input
+                    type="date"
+                    value={editForm.end_date || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, end_date: e.target.value })
+                    }
+                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Budget (ETB)</label>
-                <input type="number" value={editForm.total_budget || ""}
-                       onChange={(e) => setEditForm({ ...editForm, total_budget: e.target.value })}
-                       className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("projects.totalBudget")}
+                </label>
+                <input
+                  type="number"
+                  value={editForm.total_budget || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, total_budget: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {(["quota_women", "quota_children", "quota_elderly", "quota_disabled"] as const).map((field) => (
+                {(
+                  [
+                    "quota_women",
+                    "quota_children",
+                    "quota_elderly",
+                    "quota_disabled",
+                  ] as const
+                ).map((field) => (
                   <div key={field}>
                     <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">
-                      {field.replace("quota_", "Quota ")}
+                      {t(`projects.${field.replace("quota_", "quota")}`)}
                     </label>
-                    <input type="number" value={editForm[field] || "0"}
-                           onChange={(e) => setEditForm({ ...editForm, [field]: e.target.value })}
-                           className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
+                    <input
+                      type="number"
+                      value={editForm[field] || "0"}
+                      onChange={(e) =>
+                        setEditForm({ ...editForm, [field]: e.target.value })
+                      }
+                      className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
                   </div>
                 ))}
               </div>
               {/* Show computed total */}
               <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-800">Auto-calculated Total Quota</span>
+                <span className="text-sm font-medium text-blue-800">
+                  {t("projects.autoQuota")}
+                </span>
                 <span className="text-xl font-bold text-blue-900">
                   {(parseInt(editForm.quota_women || "0") || 0) +
                     (parseInt(editForm.quota_children || "0") || 0) +
@@ -589,19 +858,32 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea rows={2} value={editForm.notes || ""}
-                          onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                          className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("projects.notes")}
+                </label>
+                <textarea
+                  rows={2}
+                  value={editForm.notes || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, notes: e.target.value })
+                  }
+                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onClick={() => setShowEditModal(false)}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                  Cancel
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  {t("common.cancel")}
                 </button>
-                <button type="submit" disabled={editSubmitting}
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50">
-                  {editSubmitting ? "Saving..." : "Save Changes"}
+                <button
+                  type="submit"
+                  disabled={editSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
+                >
+                  {editSubmitting ? t("common.saving") : t("common.save")}
                 </button>
               </div>
             </form>

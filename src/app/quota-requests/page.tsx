@@ -5,6 +5,7 @@ import useSWR from "swr";
 import toast from "react-hot-toast";
 import { Plus, Check, X, Filter } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -29,6 +30,7 @@ interface QuotaRequest {
 }
 
 export default function QuotaRequestsPage() {
+  const { t } = useLocale();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
 
@@ -56,7 +58,7 @@ export default function QuotaRequestsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.project_id || !form.requested_quota || !form.reason) {
-      toast.error("Please fill all fields");
+      toast.error(t("common.noData"));
       return;
     }
     setSubmitting(true);
@@ -67,7 +69,7 @@ export default function QuotaRequestsPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed to submit request");
-      toast.success("Quota request submitted");
+      toast.success(t("quotaRequests.submit"));
       setShowModal(false);
       setForm({ project_id: "", requested_quota: "", reason: "" });
       mutate();
@@ -96,30 +98,30 @@ export default function QuotaRequestsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Quota Requests</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t("quotaRequests.title")}</h1>
         <button
           onClick={() => setShowModal(true)}
           className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors flex items-center gap-2"
         >
           <Plus size={18} />
-          Request Increase
+          {t("quotaRequests.requestIncrease")}
         </button>
       </div>
 
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
-          <span className="text-sm font-medium text-gray-600">Filter by status:</span>
+          <span className="text-sm font-medium text-gray-600">{t("common.filters")}:</span>
         </div>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
+          <option value="">{t("ngos.allStatuses")}</option>
+          <option value="Pending">{t("quotaRequests.pending")}</option>
+          <option value="Approved">{t("quotaRequests.approved")}</option>
+          <option value="Rejected">{t("quotaRequests.rejected")}</option>
         </select>
       </div>
 
@@ -128,19 +130,19 @@ export default function QuotaRequestsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 text-gray-600">
-                <th className="text-left px-6 py-3 font-medium">Project</th>
-                <th className="text-left px-6 py-3 font-medium">Current</th>
-                <th className="text-left px-6 py-3 font-medium">Requested</th>
-                <th className="text-left px-6 py-3 font-medium">Reason</th>
-                <th className="text-left px-6 py-3 font-medium">By / Date</th>
-                <th className="text-left px-6 py-3 font-medium">Status</th>
-                <th className="text-left px-6 py-3 font-medium">Actions</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.project")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.currentQuota")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.requestedQuota")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.reason")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.requestedBy")} / {t("quotaRequests.requestDate")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("quotaRequests.status")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("ngos.action")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-800">
               {requests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">No requests found.</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">{t("quotaRequests.noResults")}</td>
                 </tr>
               ) : (
                 requests.map((r) => (
@@ -186,25 +188,25 @@ export default function QuotaRequestsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-800">Request Quota Increase</h2>
+              <h2 className="text-lg font-bold text-gray-800">{t("quotaRequests.requestIncrease")}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("quotaRequests.project")} *</label>
                 <select
                   required
                   value={form.project_id}
                   onChange={(e) => setForm({ ...form, project_id: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Active Project</option>
+                  <option value="">{t("quotaRequests.selectProject")}</option>
                   {projects.map(p => <option key={p.project_id} value={p.project_id}>{p.project_title}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Requested Total Quota *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("quotaRequests.requestedQuota")} *</label>
                 <input
                   required
                   type="number"
@@ -215,14 +217,13 @@ export default function QuotaRequestsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Increase *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("quotaRequests.reasonLabel")} *</label>
                 <textarea
                   required
                   rows={3}
                   value={form.reason}
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Explain why more slots are needed..."
                 />
               </div>
 
@@ -232,14 +233,14 @@ export default function QuotaRequestsPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Submitting..." : "Submit Request"}
+                  {submitting ? t("quotaRequests.submitting") : t("quotaRequests.submit")}
                 </button>
               </div>
             </form>

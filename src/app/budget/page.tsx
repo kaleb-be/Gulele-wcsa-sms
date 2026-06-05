@@ -7,6 +7,7 @@ import { Search, Plus, Filter, Check, X, Receipt } from "lucide-react";
 import { useSession } from "next-auth/react";
 import ImageUpload from "@/components/ImageUpload";
 import ProjectSearchSelect from "@/components/ProjectSearchSelect";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -32,6 +33,7 @@ interface BudgetRecord {
 }
 
 export default function BudgetPage() {
+  const { t } = useLocale();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
 
@@ -77,7 +79,7 @@ export default function BudgetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.project_id || !form.amount || !form.description) {
-      toast.error("Please fill all required fields");
+      toast.error(t("common.noData"));
       return;
     }
     setSubmitting(true);
@@ -88,7 +90,7 @@ export default function BudgetPage() {
         body: JSON.stringify(form),
       });
       if (!res.ok) throw new Error("Failed to create record");
-      toast.success("Budget record added");
+      toast.success(t("budget.addRecord"));
       setShowModal(false);
       setForm({
         project_id: "",
@@ -125,27 +127,27 @@ export default function BudgetPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Budget Management</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t("budget.title")}</h1>
         <button
           onClick={() => setShowModal(true)}
           className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors flex items-center gap-2"
         >
           <Plus size={18} />
-          Add Record
+          {t("budget.addRecord")}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-          <p className="text-xs font-bold text-gray-500 uppercase">Total Allocated</p>
+          <p className="text-xs font-bold text-gray-500 uppercase">{t("budget.totalAllocated")}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{totalAllocated.toLocaleString()} ETB</p>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
-          <p className="text-xs font-bold text-gray-500 uppercase">Approved Spend</p>
+          <p className="text-xs font-bold text-gray-500 uppercase">{t("budget.approvedSpend")}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{totalApprovedSpend.toLocaleString()} ETB</p>
         </div>
         <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-          <p className="text-xs font-bold text-gray-500 uppercase">Pending Approval</p>
+          <p className="text-xs font-bold text-gray-500 uppercase">{t("budget.pendingApproval")}</p>
           <p className="text-2xl font-bold text-gray-800 mt-1">{totalPending.toLocaleString()} ETB</p>
         </div>
       </div>
@@ -153,17 +155,17 @@ export default function BudgetPage() {
       <div className="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex-wrap">
         <div className="flex items-center gap-2">
           <Filter size={16} className="text-gray-400" />
-          <span className="text-sm font-medium text-gray-600">Filters:</span>
+          <span className="text-sm font-medium text-gray-600">{t("common.filters")}:</span>
         </div>
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
+          <option value="">{t("budget.allStatuses")}</option>
+          <option value="Pending">{t("budget.pending")}</option>
+          <option value="Approved">{t("budget.approved")}</option>
+          <option value="Rejected">{t("budget.rejected")}</option>
         </select>
         <ProjectSearchSelect projects={projects} projectId={projectId} setProjectId={setProjectId}/>
       </div>
@@ -173,19 +175,19 @@ export default function BudgetPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 text-gray-600">
-                <th className="text-left px-6 py-3 font-medium">Project</th>
-                <th className="text-left px-6 py-3 font-medium">Type</th>
-                <th className="text-left px-6 py-3 font-medium">Amount</th>
-                <th className="text-left px-6 py-3 font-medium">Description</th>
-                <th className="text-left px-6 py-3 font-medium">Date</th>
-                <th className="text-left px-6 py-3 font-medium">Status</th>
-                <th className="text-left px-6 py-3 font-medium">Actions</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.project")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.type")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.amount")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.description")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.date")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.status")}</th>
+                <th className="text-left px-6 py-3 font-medium">{t("budget.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-800">
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">No records found.</td>
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">{t("budget.noRecords")}</td>
                 </tr>
               ) : (
                 records.map((r) => (
@@ -215,7 +217,7 @@ export default function BudgetPage() {
                         {r.receipt_url && (
                           <a href={r.receipt_url} target="_blank" rel="noopener noreferrer" className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-blue-600 flex items-center gap-1">
                             <div><Receipt size={20}/></div>
-                            <div className={"font-semibold"}>View Receipt</div>
+                            <div className={"font-semibold"}>{t("budget.receiptImage")}</div>
                           </a>
                         )}
                         {isAdmin && r.approval_status === 'Pending' && (
@@ -242,38 +244,38 @@ export default function BudgetPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-800">Add Budget Record</h2>
+              <h2 className="text-lg font-bold text-gray-800">{t("budget.addBudgetRecord")}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Project *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.project")} *</label>
                 <select
                   required
                   value={form.project_id}
                   onChange={(e) => setForm({ ...form, project_id: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Select Project</option>
+                  <option value="">{t("budget.selectProject")}</option>
                   {projects.map(p => <option key={p.project_id} value={p.project_id}>{p.project_title}</option>)}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.typeLabel")} *</label>
                   <select
                     value={form.record_type}
                     onChange={(e) => setForm({ ...form, record_type: e.target.value })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Allocation">Allocation</option>
-                    <option value="Expense">Expense</option>
-                    <option value="Reimbursement">Reimbursement</option>
+                    <option value="Allocation">{t("budget.allocation")}</option>
+                    <option value="Expense">{t("budget.expense")}</option>
+                    <option value="Reimbursement">{t("budget.reimbursement")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount (ETB) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.amountLabel")} *</label>
                   <input
                     required
                     type="number"
@@ -285,7 +287,7 @@ export default function BudgetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.descriptionLabel")} *</label>
                 <input
                   required
                   type="text"
@@ -296,7 +298,7 @@ export default function BudgetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.dateLabel")} *</label>
                 <input
                   required
                   type="date"
@@ -307,7 +309,7 @@ export default function BudgetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Receipt Image</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.receiptImage")}</label>
                 <ImageUpload
                   value={form.receipt_url}
                   onChange={(url) => setForm({ ...form, receipt_url: url })}
@@ -315,7 +317,7 @@ export default function BudgetPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{t("budget.notes")}</label>
                 <textarea
                   rows={2}
                   value={form.notes}
@@ -330,14 +332,14 @@ export default function BudgetPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Adding..." : "Add Record"}
+                  {submitting ? t("budget.adding") : t("budget.addRecord")}
                 </button>
               </div>
             </form>
