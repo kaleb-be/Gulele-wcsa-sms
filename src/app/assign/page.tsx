@@ -5,6 +5,7 @@ import useSWR from "swr";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Search, ArrowRight, CheckCircle2, AlertCircle, AlertTriangle, X } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -27,6 +28,7 @@ interface Project {
 }
 
 export default function EnrollmentFlow() {
+  const { t } = useLocale();
   const [step, setStep] = useState(1);
   const [search, setSearch] = useState("");
   const [selectedBen, setSelectedBen] = useState<Beneficiary | null>(null);
@@ -76,12 +78,12 @@ export default function EnrollmentFlow() {
       } else if (!res.ok) {
         throw new Error(data.message || "Failed to enroll");
       } else {
-        setResult({ type: "success", message: "Successfully enrolled!", data });
-        toast.success("Enrollment successful");
+        setResult({ type: "success", message: t("enroll.enrollmentSuccess"), data });
+        toast.success(t("enroll.enrollmentSuccess"));
       }
     } catch (err) {
       setResult({ type: "error", message: "An unexpected error occurred." });
-      toast.error("Failed to enroll");
+      toast.error(t("enroll.processing"));
     } finally {
       setSubmitting(false);
     }
@@ -99,8 +101,8 @@ export default function EnrollmentFlow() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-12">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800">New Enrollment</h1>
-        <p className="text-gray-500 mt-2">Follow the steps to assign a beneficiary to a project.</p>
+        <h1 className="text-3xl font-bold text-gray-800">{t("enroll.title")}</h1>
+        <p className="text-gray-500 mt-2">{t("enroll.subtitle")}</p>
       </div>
 
       {/* Stepper */}
@@ -114,7 +116,7 @@ export default function EnrollmentFlow() {
               {step > s ? <CheckCircle2 size={18} /> : s}
             </div>
             <span className={`text-xs font-bold uppercase tracking-wider ${step >= s ? "text-gray-700" : "text-gray-400"}`}>
-              {s === 1 ? "Beneficiary" : s === 2 ? "Project" : "Confirm"}
+              {s === 1 ? t("enroll.step1") : s === 2 ? t("enroll.step2") : t("enroll.step3")}
             </span>
             {s < 3 && <div className="w-12 h-px bg-gray-200 mx-2" />}
           </div>
@@ -128,14 +130,14 @@ export default function EnrollmentFlow() {
               <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-800">Enrollment Successful!</h2>
+              <h2 className="text-2xl font-bold text-gray-800">{t("enroll.enrollmentSuccess")}</h2>
               <p className="text-gray-600">
-                <span className="font-bold">{selectedBen?.full_name}</span> has been enrolled in <br />
+                <span className="font-bold">{selectedBen?.full_name}</span> {t("enroll.enrolledIn")} <br />
                 <span className="font-bold text-blue-900">{selectedProj?.project_title}</span>
               </p>
               <div className="flex justify-center gap-4 pt-4">
-                <button onClick={reset} className="px-6 py-2 bg-blue-900 text-white rounded-lg font-medium">Enroll Another</button>
-                <Link href={`/projects/${selectedProj?.project_id}`} className="px-6 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50">View Project</Link>
+                <button onClick={reset} className="px-6 py-2 bg-blue-900 text-white rounded-lg font-medium">{t("enroll.enrollAnother")}</button>
+                <Link href={`/projects/${selectedProj?.project_id}`} className="px-6 py-2 border border-gray-200 rounded-lg font-medium hover:bg-gray-50">{t("enroll.viewProject")}</Link>
               </div>
             </div>
           ) : result.type === 'duplicate' ? (
@@ -143,32 +145,32 @@ export default function EnrollmentFlow() {
               <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-800">
                 <AlertCircle size={24} className="flex-shrink-0" />
                 <div>
-                  <p className="font-bold">Duplicate Enrollment Blocked</p>
+                  <p className="font-bold">{t("enroll.duplicateTitle")}</p>
                   <p className="text-sm">
-                    This beneficiary is already enrolled in a project with the same area of intervention 
-                    (<span className="font-bold">{result.data.conflictingEnrollment.aoi_category}</span>) during this period.
+                    {t("enroll.duplicateMessage")}
+                    (<span className="font-bold">{result.data.conflictingEnrollment.aoi_category}</span>) {t("enroll.duringPeriod")}
                   </p>
                 </div>
               </div>
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm border border-gray-100">
-                <p><span className="text-gray-500">Conflicting Project:</span> <span className="font-bold">{result.data.conflictingEnrollment.project_title}</span></p>
-                <p><span className="text-gray-500">NGO:</span> {result.data.conflictingEnrollment.ngo_name}</p>
-                <p><span className="text-gray-500">Period:</span> {result.data.conflictingEnrollment.start_date} to {result.data.conflictingEnrollment.end_date || "Ongoing"}</p>
+                <p><span className="text-gray-500">{t("enroll.conflictingProject")}:</span> <span className="font-bold">{result.data.conflictingEnrollment.project_title}</span></p>
+                <p><span className="text-gray-500">{t("projects.ngo")}:</span> {result.data.conflictingEnrollment.ngo_name}</p>
+                <p><span className="text-gray-500">{t("projects.dates")}:</span> {result.data.conflictingEnrollment.start_date} to {result.data.conflictingEnrollment.end_date || t("projects.ongoing")}</p>
               </div>
-              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">Choose Different Project</button>
+              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
             </div>
           ) : result.type === 'quota_exceeded' ? (
             <div className="space-y-4 text-left">
               <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl text-orange-800">
                 <AlertTriangle size={24} className="flex-shrink-0" />
                 <div>
-                  <p className="font-bold">Project Capacity Reached</p>
+                  <p className="font-bold">{t("enroll.quotaTitle")}</p>
                   <p className="text-sm">
-                    This project has reached its maximum capacity of <span className="font-bold">{result.data.quota}</span> beneficiaries.
+                    {t("enroll.quotaMessage")} <span className="font-bold">{result.data.quota}</span> {t("enroll.beneficiaries")}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">Choose Different Project</button>
+              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
             </div>
           ) : (
             <div className="space-y-4">
@@ -186,13 +188,13 @@ export default function EnrollmentFlow() {
           {step === 1 && (
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-gray-800">Step 1: Select Beneficiary</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step1")}: {t("enroll.step1")}</h2>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     autoFocus
                     type="text"
-                    placeholder="Search by name, ID, or phone..."
+                    placeholder={t("enroll.searchBeneficiary")}
                     className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -202,11 +204,11 @@ export default function EnrollmentFlow() {
 
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                 {search.length <= 2 ? (
-                  <div className="text-center py-12 text-gray-400 italic">Type at least 3 characters to find beneficiaries.</div>
+                  <div className="text-center py-12 text-gray-400 italic">{t("enroll.typeToSearch")}</div>
                 ) : !beneficiaries ? (
-                  <div className="text-center py-12">Loading...</div>
+                  <div className="text-center py-12">{t("common.loading")}</div>
                 ) : beneficiaries.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400">No beneficiaries found matching &quot;{search}&quot;</div>
+                  <div className="text-center py-12 text-gray-400">{t("beneficiaries.noResults")}</div>
                 ) : (
                   beneficiaries.map((ben) => (
                     <button
@@ -221,7 +223,7 @@ export default function EnrollmentFlow() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-bold text-gray-800">{ben.full_name}</p>
-                          <p className="text-sm text-gray-500">{ben.category} • Kebele {ben.kebele}</p>
+                          <p className="text-sm text-gray-500">{ben.category} • {t("beneficiaries.kebele")} {ben.kebele}</p>
                         </div>
                         {selectedBen?.ben_id === ben.ben_id && <CheckCircle2 className="text-blue-900" />}
                       </div>
@@ -236,7 +238,7 @@ export default function EnrollmentFlow() {
                     onClick={handleNextStep}
                     className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-800 transition-colors"
                   >
-                    Continue to Projects <ArrowRight size={18} />
+                    {t("enroll.continue")} <ArrowRight size={18} />
                   </button>
                 </div>
               )}
@@ -246,15 +248,15 @@ export default function EnrollmentFlow() {
           {step === 2 && (
             <div className="p-8 space-y-6">
                <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">Step 2: Select Project</h2>
-                <button onClick={() => setStep(1)} className="text-sm text-blue-600 font-medium">Back</button>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step2")}: {t("enroll.step2")}</h2>
+                <button onClick={() => setStep(1)} className="text-sm text-blue-600 font-medium">{t("enroll.back")}</button>
               </div>
 
               <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {!projects ? (
-                  <div className="text-center py-12">Loading projects...</div>
+                  <div className="text-center py-12">{t("common.loading")}</div>
                 ) : projects.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 italic">No active projects available.</div>
+                  <div className="text-center py-12 text-gray-400 italic">{t("enroll.noProjectsAvailable")}</div>
                 ) : (
                   Object.entries(
                     projects.reduce((acc, p) => {
@@ -288,7 +290,7 @@ export default function EnrollmentFlow() {
                               <div className="flex items-center justify-between text-xs">
                                 <p className="text-gray-500">{p.ngo_name}</p>
                                 <p className={`font-bold ${remaining < 5 ? "text-orange-600" : "text-green-600"}`}>
-                                  {isFull ? "Full Capacity" : `${remaining} slots left`}
+                                  {isFull ? t("enroll.fullCapacity") : `${remaining} ${t("enroll.slotsLeft")}`}
                                 </p>
                               </div>
                             </button>
@@ -306,7 +308,7 @@ export default function EnrollmentFlow() {
                     onClick={handleNextStep}
                     className="bg-blue-900 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-800 transition-colors"
                   >
-                    Confirm Enrollment <ArrowRight size={18} />
+                    {t("enroll.confirmEnrollment")} <ArrowRight size={18} />
                   </button>
                 </div>
               )}
@@ -316,18 +318,18 @@ export default function EnrollmentFlow() {
           {step === 3 && selectedBen && selectedProj && (
             <div className="p-8 space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">Step 3: Confirm & Date</h2>
-                <button onClick={() => setStep(2)} className="text-sm text-blue-600 font-medium">Back</button>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step3")}: {t("enroll.step3")}</h2>
+                <button onClick={() => setStep(2)} className="text-sm text-blue-600 font-medium">{t("enroll.back")}</button>
               </div>
 
               <div className="bg-blue-50 rounded-2xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6 border border-blue-100">
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-blue-600">Beneficiary</p>
+                  <p className="text-[10px] uppercase font-bold text-blue-600">{t("enroll.step1")}</p>
                   <p className="text-lg font-bold text-gray-800">{selectedBen.full_name}</p>
-                  <p className="text-sm text-gray-500">{selectedBen.category} • Kebele {selectedBen.kebele}</p>
+                  <p className="text-sm text-gray-500">{selectedBen.category} • {t("beneficiaries.kebele")} {selectedBen.kebele}</p>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-bold text-blue-600">Project & NGO</p>
+                  <p className="text-[10px] uppercase font-bold text-blue-600">{t("enroll.step2")}</p>
                   <p className="text-lg font-bold text-gray-800">{selectedProj.project_title}</p>
                   <p className="text-sm text-gray-500">{selectedProj.ngo_name} • {selectedProj.aoi_category}</p>
                 </div>
@@ -335,7 +337,7 @@ export default function EnrollmentFlow() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Start Date *</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t("enroll.startDate")} *</label>
                   <input
                     type="date"
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -344,7 +346,7 @@ export default function EnrollmentFlow() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">End Date (Optional)</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">{t("enroll.endDate")}</label>
                   <input
                     type="date"
                     className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
@@ -355,11 +357,11 @@ export default function EnrollmentFlow() {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Notes</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">{t("enroll.notes")}</label>
                 <textarea
                   rows={3}
                   className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                  placeholder="Additional information about this enrollment..."
+                  placeholder={t("enroll.additionalInfo")}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
@@ -371,7 +373,7 @@ export default function EnrollmentFlow() {
                   onClick={handleEnroll}
                   className="w-full bg-blue-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Processing..." : "Complete Enrollment"}
+                  {submitting ? t("enroll.processing") : t("enroll.completeEnrollment")}
                 </button>
               </div>
             </div>
