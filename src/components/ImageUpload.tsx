@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { useLocale } from "./LocaleProvider";
 
 interface ImageUploadProps {
   value: string;
@@ -8,6 +9,7 @@ interface ImageUploadProps {
 }
 
 export default function ImageUpload({ value, onChange }: ImageUploadProps) {
+  const { t } = useLocale();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(value);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,17 +61,17 @@ export default function ImageUpload({ value, onChange }: ImageUploadProps) {
         {preview ? (
           <img src={preview} alt="Preview" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-gray-500 text-xs">No photo</span>
+          <span className="text-gray-500 text-xs">{t("common.noData")}</span>
         )}
         {uploading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <span className="text-white text-[10px] font-medium">Uploading...</span>
+            <span className="text-white text-[10px] font-medium">{t("common.loading")}</span>
           </div>
         )}
       </div>
 
       <label className={`cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors ${uploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
-        {uploading ? "Uploading..." : "Upload photo"}
+        {uploading ? t("common.loading") : t("registerForm.photo")}
         <input
           type="file"
           className="hidden"

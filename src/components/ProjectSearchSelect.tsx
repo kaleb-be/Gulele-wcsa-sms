@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale } from "./LocaleProvider";
 
 type Project = {
   project_id: string | number;
@@ -18,6 +19,7 @@ export default function ProjectSearchSelect({
                                               projectId,
                                               setProjectId,
                                             }: Props) {
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -88,7 +90,7 @@ export default function ProjectSearchSelect({
           setOpen(true);
           if (!query && selectedProject) setQuery(selectedProject.project_title);
         }}
-        placeholder="Search projects..."
+        placeholder={t("budget.selectProject")}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
       />
 
@@ -99,7 +101,7 @@ export default function ProjectSearchSelect({
             onClick={() => handleSelect(null)}
             className="w-full px-3 py-2 text-left text-sm whitespace-normal break-words hover:bg-gray-50"
           >
-            All Projects
+            {t("budget.allProjects")}
           </button>
 
           <div className="max-h-64 overflow-auto">
@@ -123,7 +125,7 @@ export default function ProjectSearchSelect({
               })
             ) : (
               <div className="px-3 py-2 text-sm text-gray-500">
-                No matching projects
+                {t("common.noData")}
               </div>
             )}
           </div>
