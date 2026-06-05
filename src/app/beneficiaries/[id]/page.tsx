@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { Trash2, Printer, Pencil, X, Check, ArrowLeft } from "lucide-react";
 import ImageUpload from "@/components/ImageUpload";
 import Link from "next/link";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -50,6 +51,7 @@ interface Enrollment {
 }
 
 export default function BeneficiaryProfile() {
+  const { t } = useLocale();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -87,10 +89,10 @@ export default function BeneficiaryProfile() {
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update enrollment");
-      toast.success("Enrollment updated");
+      toast.success(t("common.save"));
       mutateRecs();
     } catch (err) {
-      toast.error("Failed to update enrollment");
+      toast.error(t("common.na"));
     } finally {
       setUpdatingRecordId(null);
     }
@@ -109,14 +111,14 @@ export default function BeneficiaryProfile() {
     });
 
     toast.promise(promise, {
-      loading: "Saving changes...",
-      success: "Changes saved successfully",
-      error: "Failed to save changes",
+      loading: t("common.saving"),
+      success: t("common.save"),
+      error: t("common.na"),
     }).finally(() => setSaving(false));
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete this beneficiary? This action cannot be undone.")) return;
+    if (!confirm(t("common.back"))) return;
 
     setDeleting(true);
     const promise = fetch(`/api/beneficiaries/${id}`, { method: "DELETE" }).then(async (res) => {
@@ -125,9 +127,9 @@ export default function BeneficiaryProfile() {
     });
 
     toast.promise(promise, {
-      loading: "Deleting beneficiary...",
-      success: "Beneficiary deleted successfully",
-      error: "Failed to delete beneficiary",
+      loading: t("common.loading"),
+      success: t("common.save"),
+      error: t("common.na"),
     }).finally(() => setDeleting(false));
   };
 
@@ -171,9 +173,9 @@ export default function BeneficiaryProfile() {
   if (!beneficiary || (beneficiary as any).error) {
     return (
       <div className="text-center py-16 text-gray-500">
-        Beneficiary not found
+        {t("beneficiaries.noResults")}
         <Link href="/beneficiaries" className="text-blue-600 hover:underline ml-2">
-          Back to list
+          {t("common.back")}
         </Link>
       </div>
     );
@@ -191,7 +193,7 @@ export default function BeneficiaryProfile() {
             <ArrowLeft size={24} className="text-gray-600" />
           </button>
           <h1 className="text-2xl font-bold text-gray-800">
-            Beneficiary Profile: <span className="text-blue-600">{beneficiary.full_name}</span>
+            {t("beneficiaries.title")}: <span className="text-blue-600">{beneficiary.full_name}</span>
           </h1>
         </div>
         <div className="flex flex-row flex-wrap justify-center sm:justify-end gap-3 w-full sm:w-auto">
@@ -202,14 +204,14 @@ export default function BeneficiaryProfile() {
                 className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <Printer size={16} />
-                Print
+                {t("common.print")}
               </button>
               <button
                 onClick={startEdit}
                 className="flex items-center justify-center gap-2 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
               >
                 <Pencil size={16} />
-                Edit
+                {t("common.edit")}
               </button>
               <button
                 onClick={handleDelete}
@@ -217,7 +219,7 @@ export default function BeneficiaryProfile() {
                 className="flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors disabled:opacity-50"
               >
                 <Trash2 size={16} />
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? t("common.saving") : t("ngos.suspend")}
               </button>
             </>
           ) : (
@@ -227,7 +229,7 @@ export default function BeneficiaryProfile() {
                 className="flex items-center justify-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
               >
                 <X size={16} />
-                Cancel
+                {t("common.cancel")}
               </button>
               <button
                 onClick={handleSave}
@@ -235,7 +237,7 @@ export default function BeneficiaryProfile() {
                 className="flex items-center justify-center gap-2 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 <Check size={16} />
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? t("common.saving") : t("common.save")}
               </button>
             </>
           )}
@@ -292,11 +294,11 @@ export default function BeneficiaryProfile() {
         </div>
 
         <h2 className="text-lg font-semibold text-gray-800 mb-4">
-          Personal Information
+          {t("enroll.subtitle")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
           <div>
-            <span className="text-gray-500 block">Full Name</span>
+            <span className="text-gray-500 block">{t("registerForm.fullName")}</span>
             {editing ? (
               <input
                 type="text"
@@ -313,7 +315,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Sex</span>
+            <span className="text-gray-500 block">{t("registerForm.sex")}</span>
             {editing ? (
               <select
                 value={editForm.sex || ""}
@@ -322,8 +324,8 @@ export default function BeneficiaryProfile() {
                 }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Female">Female</option>
-                <option value="Male">Male</option>
+                <option value="Female">{t("registerForm.female")}</option>
+                <option value="Male">{t("registerForm.male")}</option>
               </select>
             ) : (
               <span className="font-medium text-gray-800">
@@ -332,7 +334,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Age</span>
+            <span className="text-gray-500 block">{t("registerForm.age")}</span>
             {editing ? (
               <input
                 type="number"
@@ -349,7 +351,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Date of Birth</span>
+            <span className="text-gray-500 block">{t("registerForm.dateOfBirth")}</span>
             {editing ? (
               <input
                 type="date"
@@ -366,7 +368,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Woreda</span>
+            <span className="text-gray-500 block">{t("registerForm.woreda")}</span>
             {editing ? (
               <input
                 type="text"
@@ -383,7 +385,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Kebele</span>
+            <span className="text-gray-500 block">{t("registerForm.kebele")}</span>
             {editing ? (
               <input
                 type="text"
@@ -400,7 +402,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">House No.</span>
+            <span className="text-gray-500 block">{t("registerForm.houseNo")}</span>
             {editing ? (
               <input
                 type="text"
@@ -417,7 +419,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Phone</span>
+            <span className="text-gray-500 block">{t("registerForm.phone")}</span>
             {editing ? (
               <input
                 type="text"
@@ -434,7 +436,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">ID Type</span>
+            <span className="text-gray-500 block">{t("registerForm.idType")}</span>
             {editing ? (
               <select
                 value={editForm.id_type || ""}
@@ -443,10 +445,8 @@ export default function BeneficiaryProfile() {
                 }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Kebele ID">Kebele ID</option>
-                <option value="Fayda">Fayda</option>
-                <option value="Passport">Passport</option>
-                <option value="Other">Other</option>
+                <option value="Kebele ID">{t("registerForm.kebeleId")}</option>
+                <option value="Fayda">{t("registerForm.fayda")}</option>
               </select>
             ) : (
               <span className="font-medium text-gray-800">
@@ -455,7 +455,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">ID Number</span>
+            <span className="text-gray-500 block">{t("registerForm.idNumber")}</span>
             {editing ? (
               <input
                 type="text"
@@ -472,7 +472,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Category</span>
+            <span className="text-gray-500 block">{t("registerForm.category")}</span>
             {editing ? (
               <select
                 value={editForm.category || ""}
@@ -493,7 +493,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Status</span>
+            <span className="text-gray-500 block">{t("common.status")}</span>
             {editing ? (
               <select
                 value={editForm.status || ""}
@@ -502,16 +502,16 @@ export default function BeneficiaryProfile() {
                 }
                 className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="Active">Active</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="Active">{t("statuses.active")}</option>
+                <option value="Completed">{t("statuses.completed")}</option>
+                <option value="Cancelled">{t("statuses.cancelled")}</option>
               </select>
             ) : (
               <span>{statusBadge(beneficiary.status)}</span>
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Family Size</span>
+            <span className="text-gray-500 block">{t("registerForm.familySize")}</span>
             {editing ? (
               <input
                 type="number"
@@ -528,7 +528,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Occupation</span>
+            <span className="text-gray-500 block">{t("registerForm.occupation")}</span>
             {editing ? (
               <input
                 type="text"
@@ -545,7 +545,7 @@ export default function BeneficiaryProfile() {
             )}
           </div>
           <div>
-            <span className="text-gray-500 block">Avg Income</span>
+            <span className="text-gray-500 block">{t("registerForm.avgIncome")}</span>
             {editing ? (
               <input
                 type="number"
@@ -563,7 +563,7 @@ export default function BeneficiaryProfile() {
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-100">
-          <span className="text-gray-500 block text-sm">Notes</span>
+          <span className="text-gray-500 block text-sm">{t("registerForm.notes")}</span>
           {editing ? (
             <textarea
               value={editForm.notes || ""}
@@ -572,11 +572,11 @@ export default function BeneficiaryProfile() {
               }
               rows={3}
               className="w-full border border-gray-300 rounded px-2 py-1 mt-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              placeholder="Beneficiary notes..."
+              placeholder={t("registerForm.notes")}
             />
           ) : (
             <p className="text-gray-800 text-sm mt-1 whitespace-pre-wrap">
-              {beneficiary.notes || "No notes available."}
+              {beneficiary.notes || t("common.noData")}
             </p>
           )}
         </div>
@@ -585,7 +585,7 @@ export default function BeneficiaryProfile() {
       <div className="bg-white rounded-xl shadow-md overflow-hidden print:shadow-none print:border print:border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 print:bg-white">
           <h2 className="text-lg font-semibold text-gray-800">
-            Current Enrollments
+            {t("projects.enrollments")}
           </h2>
         </div>
         <div className="overflow-x-auto">
@@ -593,25 +593,25 @@ export default function BeneficiaryProfile() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 print:bg-white">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Project Title
+                  {t("projects.projectTitle")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  NGO Name
+                  {t("projects.ngoLabel")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Area of Intervention
+                  {t("projects.areaLabel")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Start Date
+                  {t("projects.startDate")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  End Date
+                  {t("projects.endDate")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Status
+                  {t("common.status")}
                 </th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">
-                  Actions
+                  {t("ngos.action")}
                 </th>
               </tr>
             </thead>
@@ -622,7 +622,7 @@ export default function BeneficiaryProfile() {
                     colSpan={7}
                     className="px-4 py-8 text-center text-gray-500"
                   >
-                    No enrollments found.
+                    {t("projects.noEnrollments")}
                   </td>
                 </tr>
               ) : (
@@ -654,7 +654,7 @@ export default function BeneficiaryProfile() {
                             disabled={updatingRecordId === r.enrollment_id}
                             className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded font-bold uppercase hover:bg-blue-700 disabled:opacity-50"
                           >
-                            Complete
+                            {t("statuses.completed")}
                           </button>
                           <button
                             onClick={() => {
@@ -664,7 +664,7 @@ export default function BeneficiaryProfile() {
                             disabled={updatingRecordId === r.enrollment_id}
                             className="text-[10px] bg-red-600 text-white px-2 py-1 rounded font-bold uppercase hover:bg-red-700 disabled:opacity-50"
                           >
-                            Cancel
+                            {t("statuses.cancelled")}
                           </button>
                         </div>
                       )}
