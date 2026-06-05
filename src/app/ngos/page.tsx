@@ -5,6 +5,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import toast from "react-hot-toast";
 import { Search } from "lucide-react";
+import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -22,6 +23,7 @@ interface NGO {
 const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
 export default function NGOsPage() {
+  const { t } = useLocale();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -107,12 +109,12 @@ export default function NGOsPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">NGOs</h1>
+        <h1 className="text-2xl font-bold text-gray-800">{t("ngos.title")}</h1>
         <button
           onClick={() => setShowModal(true)}
           className="bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-800 transition-colors"
         >
-          Add NGO
+          {t("ngos.add")}
         </button>
       </div>
 
@@ -121,7 +123,7 @@ export default function NGOsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder="Search by name..."
+            placeholder={t("ngos.searchPlaceholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded-lg pl-10 pr-4 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -132,7 +134,7 @@ export default function NGOsPage() {
           onChange={(e) => setStatus(e.target.value)}
           className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">All Statuses</option>
+          <option value="">{t("ngos.allStatuses")}</option>
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -147,16 +149,16 @@ export default function NGOsPage() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Name
+                  {t("ngos.name")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Contact Person
+                  {t("ngos.contactPerson")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Status
+                  {t("ngos.status")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Action
+                  {t("ngos.action")}
                 </th>
               </tr>
             </thead>
@@ -181,7 +183,7 @@ export default function NGOsPage() {
               ) : ngos.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                    No NGOs found.
+                    {t("ngos.noResults")}
                   </td>
                 </tr>
               ) : (
@@ -202,7 +204,7 @@ export default function NGOsPage() {
                         href={`/ngos/${ngo.ngo_id}`}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        View
+                        {t("ngos.view")}
                       </Link>
                     </td>
                   </tr>
@@ -217,7 +219,7 @@ export default function NGOsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4">
             <div className="flex items-center justify-between px-6 pt-6 pb-2">
-              <h2 className="text-lg font-bold text-gray-800">Add NGO</h2>
+              <h2 className="text-lg font-bold text-gray-800">{t("ngos.add")}</h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -228,7 +230,7 @@ export default function NGOsPage() {
             <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Name <span className="text-red-500">*</span>
+                  {t("ngos.name")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -245,7 +247,7 @@ export default function NGOsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contact Person
+                  {t("ngos.contactPersonLabel")}
                 </label>
                 <input
                   type="text"
@@ -260,7 +262,7 @@ export default function NGOsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                    {t("ngos.phone")}
                   </label>
                   <input
                     type="text"
@@ -273,7 +275,7 @@ export default function NGOsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    {t("ngos.email")}
                   </label>
                   <input
                     type="email"
@@ -288,7 +290,7 @@ export default function NGOsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Registration Number
+                  {t("ngos.registrationNumber")}
                 </label>
                 <input
                   type="text"
@@ -302,7 +304,7 @@ export default function NGOsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes
+                  {t("ngos.notes")}
                 </label>
                 <textarea
                   value={form.notes}
@@ -316,7 +318,7 @@ export default function NGOsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
+                  {t("ngos.status")}
                 </label>
                 <select
                   value={form.status}
@@ -339,14 +341,14 @@ export default function NGOsPage() {
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
                 >
-                  {submitting ? "Saving..." : "Add NGO"}
+                  {submitting ? t("common.saving") : t("ngos.add")}
                 </button>
               </div>
             </form>
