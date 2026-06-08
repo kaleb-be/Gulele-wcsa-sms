@@ -102,28 +102,54 @@ export default function EnrollmentFlow() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+    <div className="max-w-4xl mx-auto space-y-8 pb-12 overflow-x-hidden">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-800">{t("enroll.title")}</h1>
         <p className="text-gray-500 mt-2">{t("enroll.subtitle")}</p>
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center justify-center gap-4">
-        {[1, 2, 3].map((s) => (
-          <div key={s} className="flex items-center gap-2">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              step === s ? "bg-blue-900 text-white" : 
-              step > s ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-400"
-            }`}>
-              {step > s ? <CheckCircle2 size={18} /> : s}
+      <div className="flex items-center justify-center gap-2 md:gap-4">
+        {[1, 2, 3].map((s) => {
+          const labels = [
+            t("enroll.step1"),
+            t("enroll.step2"),
+            t("enroll.step3"),
+          ];
+          return (
+            <div key={s} className="flex items-center gap-1 md:gap-2">
+              <div
+                className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold flex-shrink-0 ${
+                  step === s
+                    ? "bg-blue-900 text-white"
+                    : step > s
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {step > s ? <CheckCircle2 size={16} /> : s}
+              </div>
+              {/* Label: always visible on desktop, only visible for active step on mobile */}
+              <span
+                className={`text-xs font-bold uppercase tracking-wider hidden md:inline ${
+                  step >= s ? "text-gray-700" : "text-gray-400"
+                }`}
+              >
+          {labels[s - 1]}
+        </span>
+              <span
+                className={`text-xs font-bold uppercase tracking-wider md:hidden ${
+                  step === s ? "text-gray-700 inline" : "hidden"
+                }`}
+              >
+          {labels[s - 1]}
+        </span>
+              {s < 3 && (
+                <div className="w-6 md:w-12 h-px bg-gray-200 mx-1 md:mx-2 flex-shrink-0" />
+              )}
             </div>
-            <span className={`text-xs font-bold uppercase tracking-wider ${step >= s ? "text-gray-700" : "text-gray-400"}`}>
-              {s === 1 ? t("enroll.step1") : s === 2 ? t("enroll.step2") : t("enroll.step3")}
-            </span>
-            {s < 3 && <div className="w-12 h-px bg-gray-200 mx-2" />}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {result ? (
@@ -191,7 +217,7 @@ export default function EnrollmentFlow() {
           {step === 1 && (
             <div className="p-8 space-y-6">
               <div className="space-y-2">
-                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step1")}: {t("enroll.step1")}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step1")}</h2>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input
@@ -251,7 +277,7 @@ export default function EnrollmentFlow() {
           {step === 2 && (
             <div className="p-8 space-y-6">
                <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step2")}: {t("enroll.step2")}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step2")}</h2>
                 <button onClick={() => setStep(1)} className="text-sm text-blue-600 font-medium">{t("enroll.back")}</button>
               </div>
 
@@ -321,7 +347,7 @@ export default function EnrollmentFlow() {
           {step === 3 && selectedBen && selectedProj && (
             <div className="p-8 space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step3")}: {t("enroll.step3")}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{t("enroll.step3")}</h2>
                 <button onClick={() => setStep(2)} className="text-sm text-blue-600 font-medium">{t("enroll.back")}</button>
               </div>
 
