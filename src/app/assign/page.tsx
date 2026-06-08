@@ -35,6 +35,7 @@ export default function EnrollmentFlow() {
   const [selectedProj, setSelectedProj] = useState<Project | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState("");
+  const [supportRange, setSupportRange] = useState("");
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ type: 'success' | 'error' | 'duplicate' | 'quota_exceeded'; message: string; data?: any } | null>(null);
@@ -68,6 +69,7 @@ export default function EnrollmentFlow() {
           start_date: startDate,
           end_date: endDate,
           notes,
+          support_range: supportRange,
         }),
       });
 
@@ -96,6 +98,7 @@ export default function EnrollmentFlow() {
     setResult(null);
     setSearch("");
     setNotes("");
+    setSupportRange("");
   };
 
   return (
@@ -354,6 +357,27 @@ export default function EnrollmentFlow() {
                     onChange={(e) => setEndDate(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  {t("enroll.supportRangeOptional")}
+                </label>
+                <select
+                  value={supportRange}
+                  onChange={(e) => setSupportRange(e.target.value)}
+                  className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm"
+                >
+                  <option value="">{t("enroll.selectRange")}</option>
+                  <option value="500-999">500 - 999</option>
+                  <option value="1000-1999">1,000 - 1,999</option>
+                  <option value="2000-3000">2,000 - 3,000</option>
+                  <option value="3000-5000">3,000 - 5,000</option>
+                  <option value="5000-10000">5,000 - 10,000</option>
+                  <option value="10000-20000">10,000 - 20,000</option>
+                  <option value="20000-50000">20,000 - 50,000</option>
+                  <option value="50000-above">{t("enroll.supportRangeAbove")}</option>
+                </select>
               </div>
 
               <div>

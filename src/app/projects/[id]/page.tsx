@@ -65,6 +65,7 @@ interface Enrollment {
   end_date: string;
   status: string;
   aoi_category: string;
+  support_range: string;
 }
 
 interface Beneficiary {
@@ -105,6 +106,7 @@ export default function ProjectDetailPage() {
     start_date: new Date().toISOString().split("T")[0],
     end_date: "",
     notes: "",
+    support_range: "",
   });
 
   // Edit project modal
@@ -299,7 +301,7 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="no-print flex items-center justify-between">
+      <div className="no-print flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
@@ -313,9 +315,9 @@ export default function ProjectDetailPage() {
             </h1>
             <p className="text-sm text-gray-500">{project.ngo_name}</p>
           </div>
-          {statusBadge(project.status)}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 md:justify-start justify-center w-full md:w-auto">
+          {statusBadge(project.status)}
           {isAdmin && (
             <>
               <button
@@ -476,13 +478,16 @@ export default function ProjectDetailPage() {
                     <th className="text-left py-3 px-2 font-medium">
                       {t("projects.status")}
                     </th>
+                    <th className="text-left py-3 px-2 font-medium">
+                      {t("enroll.supportRange")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 text-gray-700">
                   {enrollments.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={7}
+                        colSpan={8}
                         className="py-8 text-center text-gray-400 italic"
                       >
                         {t("projects.noEnrollments")}
@@ -518,6 +523,9 @@ export default function ProjectDetailPage() {
                         <td className="py-3 px-2">{enr.start_date}</td>
                         <td className="py-3 px-2">{enr.end_date || "—"}</td>
                         <td className="py-3 px-2">{statusBadge(enr.status)}</td>
+                        <td className="py-3 px-2">
+                          {enr.support_range ? enr.support_range + " ETB" : "—"}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -592,6 +600,12 @@ export default function ProjectDetailPage() {
                 onClick={() => {
                   setShowEnrollModal(false);
                   setBenSearch("");
+                  setEnrollForm({
+                    start_date: new Date().toISOString().split("T")[0],
+                    end_date: "",
+                    notes: "",
+                    support_range: "",
+                  });
                 }}
                 className="text-gray-400 hover:text-gray-600 text-2xl"
               >
@@ -677,6 +691,31 @@ export default function ProjectDetailPage() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                  {t("enroll.supportRangeOptional")}
+                </label>
+                <select
+                  value={enrollForm.support_range}
+                  onChange={(e) =>
+                    setEnrollForm({
+                      ...enrollForm,
+                      support_range: e.target.value,
+                    })
+                  }
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">{t("enroll.selectRange")}</option>
+                  <option value="500-999">500 - 999</option>
+                  <option value="1000-1999">1,000 - 1,999</option>
+                  <option value="2000-3000">2,000 - 3,000</option>
+                  <option value="3000-5000">3,000 - 5,000</option>
+                  <option value="5000-10000">5,000 - 10,000</option>
+                  <option value="10000-20000">10,000 - 20,000</option>
+                  <option value="20000-50000">20,000 - 50,000</option>
+                  <option value="50000-above">{t("enroll.supportRangeAbove")}</option>
+                </select>
               </div>
             </div>
           </div>

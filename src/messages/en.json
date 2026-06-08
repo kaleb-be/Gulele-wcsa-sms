@@ -159,7 +159,8 @@
     "areaLabel": "Area of Intervention",
     "operationLabel": "Operation Area / Woreda",
     "datesLabel": "Dates",
-    "budgetLabel": "Total Budget"
+    "budgetLabel": "Total Budget",
+    "print": "Print"
   },
   "enroll": {
     "title": "New Enrollment",
@@ -175,6 +176,10 @@
     "notes": "Notes",
     "additionalInfo": "Additional information about this enrollment...",
     "completeEnrollment": "Complete Enrollment",
+    "supportRange": "Support Range (ETB)",
+    "supportRangeOptional": "Support Range (ETB) — Optional",
+    "selectRange": "Select range (optional)",
+    "supportRangeAbove": "50,000 and above",
     "processing": "Processing...",
     "enrollAnother": "Enroll Another",
     "viewProject": "View Project",

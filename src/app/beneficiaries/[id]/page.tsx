@@ -48,6 +48,7 @@ interface Enrollment {
   notes: string;
   project_title: string;
   ngo_name: string;
+  support_range: string;
 }
 
 export default function BeneficiaryProfile() {
@@ -610,6 +611,9 @@ export default function BeneficiaryProfile() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   {t("common.status")}
                 </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("enroll.supportRange")}
+                </th>
                 <th className="text-right px-4 py-3 font-medium text-gray-600">
                   {t("ngos.action")}
                 </th>
@@ -619,7 +623,7 @@ export default function BeneficiaryProfile() {
               {records.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-8 text-center text-gray-500"
                   >
                     {t("projects.noEnrollments")}
@@ -643,6 +647,9 @@ export default function BeneficiaryProfile() {
                       {r.end_date || "—"}
                     </td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {r.support_range ? r.support_range + " ETB" : "—"}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {r.status === "Active" && (
                         <div className="flex justify-end gap-2">

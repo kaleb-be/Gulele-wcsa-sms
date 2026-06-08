@@ -61,7 +61,7 @@ interface NGO {
   notes: string;
 }
 
-const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
+// const STATUS_OPTIONS = ["Active", "Inactive", "Suspended"];
 
 export default function NGODetailPage() {
   const { t } = useLocale();
@@ -216,7 +216,7 @@ export default function NGODetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.back()}
@@ -225,10 +225,11 @@ export default function NGODetailPage() {
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-2xl font-bold text-gray-800">{ngo.name}</h1>
-          {statusBadge(ngo.status)}
         </div>
+        <div className="flex items-center gap-2 md:justify-start justify-center w-full md:w-auto">
+        {statusBadge(ngo.status)}
         {isAdmin && (
-          <div className="flex gap-2">
+          <>
             <button
               onClick={openEditModal}
               className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -241,9 +242,10 @@ export default function NGODetailPage() {
             >
               <Trash2 size={15} /> {t("ngos.suspend")}
             </button>
-          </div>
+          </>
         )}
-      </div>
+        </div>
+    </div>
 
       <div className="bg-white rounded-xl shadow-md p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>

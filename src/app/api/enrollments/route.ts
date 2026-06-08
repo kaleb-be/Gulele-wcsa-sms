@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { ben_id, project_id, start_date, end_date, notes } = body;
+    const { ben_id, project_id, start_date, end_date, notes, support_range } = body;
 
     if (!ben_id || !project_id || !start_date) {
       return NextResponse.json(
@@ -194,6 +194,7 @@ export async function POST(request: Request) {
       "Active",
       session.user?.name || session.user?.email || "Unknown",
       notes || "",
+      support_range || "",
     ];
 
     await appendRow("enrollments", newRow);
