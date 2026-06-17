@@ -264,7 +264,7 @@ export default function BeneficiaryProfile() {
                 onChange={(url) => setEditForm({ ...editForm, photo_url: url })}
               />
             ) : beneficiary.photo_url ? (
-              <Image src={beneficiary.photo_url} alt={beneficiary.full_name} width={24} height={24} className="rounded-full object-cover border-2 border-blue-100 shadow-sm" />
+              <Image src={beneficiary.photo_url} alt={beneficiary.full_name} width={72} height={72} className="rounded-full object-cover border-2 border-blue-100 shadow-sm" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200 shadow-sm">
                 <span className="text-2xl font-bold text-gray-400">
