@@ -164,7 +164,7 @@ export default function ImportPage() {
       );
       if (match) setSelectedNgoId(match.ngo_id);
     }
-  }, [step, ngos, extractedOrgName]);
+  }, [step, ngos, extractedOrgName, selectedNgoId]);
 
   // Auto-switch to new project if none exist
   useEffect(() => {
