@@ -112,7 +112,25 @@ export async function POST(request: Request) {
       notes || "",
     ]);
 
-    return NextResponse.json({ message: "Project created successfully", project_id });
+    return NextResponse.json({ 
+      project_id, 
+      ngo_id, 
+      project_title, 
+      operation_area,
+      woreda,
+      area_of_intervention,
+      aoi_category, 
+      start_date, 
+      end_date,
+      total_budget,
+      quota_women: String(qw),
+      quota_children: String(qc),
+      quota_elderly: String(qe),
+      quota_disabled: String(qd),
+      quota_total: String(quota_total),
+      status: status || "Active",
+      notes: notes || ""
+    });
   } catch (error) {
     console.error("POST /api/projects error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

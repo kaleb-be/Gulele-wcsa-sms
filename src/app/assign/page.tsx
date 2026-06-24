@@ -186,7 +186,11 @@ export default function EnrollmentFlow() {
                 <p><span className="text-gray-500">{t("projects.ngo")}:</span> {result.data.conflictingEnrollment.ngo_name}</p>
                 <p><span className="text-gray-500">{t("projects.dates")}:</span> {result.data.conflictingEnrollment.start_date} to {result.data.conflictingEnrollment.end_date || t("projects.ongoing")}</p>
               </div>
-              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
+              <button onClick={() => {
+                setResult(null)
+                setSelectedProj(null)
+                setStep(2)
+              }} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
             </div>
           ) : result.type === 'quota_exceeded' ? (
             <div className="space-y-4 text-left">
@@ -199,7 +203,11 @@ export default function EnrollmentFlow() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setStep(2)} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
+              <button onClick={() => {
+                setResult(null)
+                setSelectedProj(null)
+                setStep(2)
+              }} className="w-full py-3 border border-gray-200 rounded-xl font-bold hover:bg-gray-50">{t("enroll.chooseDifferent")}</button>
             </div>
           ) : (
             <div className="space-y-4">

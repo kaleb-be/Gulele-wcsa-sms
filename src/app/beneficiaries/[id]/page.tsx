@@ -645,7 +645,7 @@ export default function BeneficiaryProfile() {
                     </td>
                     <td className="px-4 py-3">{statusBadge(r.status)}</td>
                     <td className="px-4 py-3 text-gray-600">
-                      {r.support_range ? r.support_range + " ETB" : "—"}
+                      {r.support_range ? r.support_range + "" : "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {r.status === "Active" && (

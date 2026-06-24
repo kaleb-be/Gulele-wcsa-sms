@@ -8,6 +8,8 @@ import toast from "react-hot-toast";
 import { ArrowLeft, Plus, ExternalLink, Pencil, Trash2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useLocale } from "@/components/LocaleProvider";
+import NgoForm from "@/components/forms/NgoForm";
+import ProjectForm from "@/components/forms/ProjectForm";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -82,30 +84,6 @@ export default function NGODetailPage() {
 
   // Edit NGO modal
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editSubmitting, setEditSubmitting] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<NGO>>({});
-
-  const [projectForm, setProjectForm] = useState({
-    project_title: "",
-    operation_area: "",
-    woreda: "",
-    area_of_intervention: "",
-    aoi_category: AOI_CATEGORIES[0],
-    start_date: "",
-    end_date: "",
-    total_budget: "",
-    quota_women: "0",
-    quota_children: "0",
-    quota_elderly: "0",
-    quota_disabled: "0",
-    notes: "",
-  });
-
-  const computedQuotaTotal =
-    (parseInt(projectForm.quota_women) || 0) +
-    (parseInt(projectForm.quota_children) || 0) +
-    (parseInt(projectForm.quota_elderly) || 0) +
-    (parseInt(projectForm.quota_disabled) || 0);
 
   if (isLoading)
     return (
@@ -119,31 +97,7 @@ export default function NGODetailPage() {
   const { ngo, projects } = data;
 
   const openEditModal = () => {
-    setEditForm({ ...ngo });
     setShowEditModal(true);
-  };
-
-  const handleEditSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setEditSubmitting(true);
-    try {
-      const res = await fetch(`/api/ngos/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editForm),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update");
-      }
-      toast.success(t("ngos.saveChanges"));
-      setShowEditModal(false);
-      mutate();
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setEditSubmitting(false);
-    }
   };
 
   const handleSuspend = async () => {
@@ -160,41 +114,6 @@ export default function NGODetailPage() {
       mutate();
     } catch (err: any) {
       toast.error(err.message);
-    }
-  };
-
-  const handleProjectSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...projectForm, ngo_id: id }),
-      });
-      if (!res.ok) throw new Error("Failed to create project");
-      toast.success(t("ngos.addProject"));
-      setShowModal(false);
-      setProjectForm({
-        project_title: "",
-        operation_area: "",
-        woreda: "",
-        area_of_intervention: "",
-        aoi_category: AOI_CATEGORIES[0],
-        start_date: "",
-        end_date: "",
-        total_budget: "",
-        quota_women: "0",
-        quota_children: "0",
-        quota_elderly: "0",
-        quota_disabled: "0",
-        notes: "",
-      });
-      mutate();
-    } catch (err) {
-      toast.error("Failed to create project");
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -375,124 +294,15 @@ export default function NGODetailPage() {
                 &times;
               </button>
             </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.name")} *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={editForm.name || ""}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, name: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.contactPersonLabel")}
-                </label>
-                <input
-                  type="text"
-                  value={editForm.contact_person || ""}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, contact_person: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("ngos.phone")}
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.phone || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, phone: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("ngos.email")}
-                  </label>
-                  <input
-                    type="email"
-                    value={editForm.email || ""}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, email: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.registrationNumber")}
-                </label>
-                <input
-                  type="text"
-                  value={editForm.registration_number || ""}
-                  onChange={(e) =>
-                    setEditForm({
-                      ...editForm,
-                      registration_number: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.status")}
-                </label>
-                <select
-                  value={editForm.status || "Active"}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, status: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="Active">{t("statuses.active")}</option>
-                  <option value="Inactive">{t("statuses.inactive")}</option>
-                  <option value="Suspended">{t("statuses.suspended")}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.notes")}
-                </label>
-                <textarea
-                  rows={2}
-                  value={editForm.notes || ""}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, notes: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={editSubmitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
-                >
-                  {editSubmitting ? t("common.saving") : t("ngos.saveChanges")}
-                </button>
-              </div>
-            </form>
+            <NgoForm
+              initialValues={ngo}
+              onSuccess={() => {
+                setShowEditModal(false);
+                mutate();
+              }}
+              onCancel={() => setShowEditModal(false)}
+              submitLabel={t("ngos.saveChanges")}
+            />
           </div>
         </div>
       )}
@@ -512,250 +322,15 @@ export default function NGODetailPage() {
                 &times;
               </button>
             </div>
-            <form onSubmit={handleProjectSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("projects.projectTitle")} *
-                </label>
-                <input
-                  required
-                  type="text"
-                  value={projectForm.project_title}
-                  onChange={(e) =>
-                    setProjectForm({
-                      ...projectForm,
-                      project_title: e.target.value,
-                    })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.aoiCategory")} *
-                  </label>
-                  <select
-                    value={projectForm.aoi_category}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        aoi_category: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    {AOI_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.areaOfIntervention")}
-                  </label>
-                  <input
-                    type="text"
-                    value={projectForm.area_of_intervention}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        area_of_intervention: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.operationArea")}
-                  </label>
-                  <input
-                    type="text"
-                    value={projectForm.operation_area}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        operation_area: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.woreda")}
-                  </label>
-                  <input
-                    type="text"
-                    value={projectForm.woreda}
-                    onChange={(e) =>
-                      setProjectForm({ ...projectForm, woreda: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.startDate")}
-                  </label>
-                  <input
-                    type="date"
-                    value={projectForm.start_date}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        start_date: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.endDate")}
-                  </label>
-                  <input
-                    type="date"
-                    value={projectForm.end_date}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        end_date: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("projects.totalBudget")}
-                  </label>
-                  <input
-                    type="number"
-                    value={projectForm.total_budget}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        total_budget: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div key="quota_women">
-                  <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">
-                    {t("projects.quotaWomen")}
-                  </label>
-                  <input
-                    type="number"
-                    value={projectForm.quota_women}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        quota_women: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div key="quota_children">
-                  <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">
-                    {t("projects.quotaChildren")}
-                  </label>
-                  <input
-                    type="number"
-                    value={projectForm.quota_children}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        quota_children: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div key="quota_elderly">
-                  <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">
-                    {t("projects.quotaElderly")}
-                  </label>
-                  <input
-                    type="number"
-                    value={projectForm.quota_elderly}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        quota_elderly: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-                <div key="quota_disabled">
-                  <label className="block text-xs font-medium text-gray-700 mb-1 capitalize">
-                    {t("projects.quotaDisabled")}
-                  </label>
-                  <input
-                    type="number"
-                    value={projectForm.quota_disabled}
-                    onChange={(e) =>
-                      setProjectForm({
-                        ...projectForm,
-                        quota_disabled: e.target.value,
-                      })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <div className="bg-blue-50 border border-blue-100 rounded-lg px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-800">
-                  {t("projects.autoQuota")}
-                </span>
-                <span className="text-xl font-bold text-blue-900">
-                  {computedQuotaTotal}
-                </span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("projects.notes")}
-                </label>
-                <textarea
-                  rows={2}
-                  value={projectForm.notes}
-                  onChange={(e) =>
-                    setProjectForm({ ...projectForm, notes: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
-                >
-                  {submitting ? t("common.saving") : t("projects.addProject")}
-                </button>
-              </div>
-            </form>
+            <ProjectForm
+              ngo_id={id}
+              onSuccess={() => {
+                setShowModal(false);
+                mutate();
+              }}
+              onCancel={() => setShowModal(false)}
+              submitLabel={t("projects.addProject")}
+            />
           </div>
         </div>
       )}
