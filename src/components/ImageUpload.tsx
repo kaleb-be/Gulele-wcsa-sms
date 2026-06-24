@@ -2,6 +2,8 @@
 
 import React, { useState, useRef } from "react";
 import { useLocale } from "./LocaleProvider";
+import Image from "next/image"
+
 
 interface ImageUploadProps {
   value: string;
@@ -57,9 +59,17 @@ export default function ImageUpload({ value, onChange }: ImageUploadProps) {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-gray-300">
+      <div className="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center border border-gray-300 relative">
         {preview ? (
-          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          // <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          <Image
+            src={preview}
+            alt="Preview"
+            fill
+            className="object-cover"
+            height={24}
+            width={24}
+          />
         ) : (
           <span className="text-gray-500 text-xs">{t("common.noData")}</span>
         )}
