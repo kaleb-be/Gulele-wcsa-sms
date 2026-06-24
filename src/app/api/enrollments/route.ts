@@ -104,6 +104,34 @@ export async function POST(request: Request) {
       project[header] = projectData[index] || "";
     });
 
+    // Block enrollment if project is terminated or expired
+    if (project.status === "Terminated" || project.status === "Suspended") {
+      return NextResponse.json({
+        error: "Project is not active",
+        message: `Cannot enroll into a ${project.status.toLowerCase()} project`
+      }, { status: 409 })
+    }
+
+    const todayCheck = new Date()
+    todayCheck.setHours(0, 0, 0, 0)
+    if (project.end_date) {
+      const projEnd = new Date(project.end_date)
+      projEnd.setHours(0, 0, 0, 0)
+      if (projEnd < todayCheck) {
+        // Also auto-update the project status in the sheet
+        const projectRowIndex = projectRows.slice(1).findIndex(r => r[0] === project_id) + 2
+        const statusColIdx = (projectRows[0] || []).indexOf("status")
+        if (statusColIdx !== -1 && projectRowIndex > 1) {
+          const { updateCell } = await import("@/lib/sheets")
+          await updateCell("projects", projectRowIndex, statusColIdx + 1, "Terminated")
+        }
+        return NextResponse.json({
+          error: "Project has expired",
+          message: `This project ended on ${project.end_date} and has been automatically terminated`
+        }, { status: 409 })
+      }
+    }
+
     // 2. Fetch NGO details for conflicting enrollment display if needed
     const ngoRows = await getSheetData("ngos");
     const ngoHeaders = ngoRows[0] || [];
@@ -133,7 +161,11 @@ export async function POST(request: Request) {
     const newEnd = end_date ? new Date(end_date) : (project.end_date ? new Date(project.end_date) : new Date("9999-12-31"));
 
     for (const existing of activeEnrollmentsForBen) {
-      if (existing.aoi_category === project.aoi_category) {
+      if (
+        existing.aoi_category &&
+        project.aoi_category &&
+        existing.aoi_category === project.aoi_category
+      ) {
         const existingStart = new Date(existing.start_date);
         let existingEndStr = existing.end_date;
         if (!existingEndStr) {

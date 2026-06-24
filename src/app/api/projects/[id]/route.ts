@@ -24,6 +24,24 @@ export async function GET(
 
     const project: any = Object.fromEntries(projectHeaders.map((h, i) => [h, projectData[i] || ""]));
 
+    // Auto-terminate expired projects
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (project.end_date && project.status === "Active") {
+      const endDate = new Date(project.end_date)
+      endDate.setHours(0, 0, 0, 0)
+      if (endDate < today) {
+        // Auto-update status to Terminated in the sheet
+        const projectRowIndex = projectRows.slice(1).findIndex(r => r[0] === id) + 2
+        const statusColIdx = projectHeaders.indexOf("status")
+        if (statusColIdx !== -1 && projectRowIndex > 1) {
+          const { updateCell } = await import("@/lib/sheets")
+          await updateCell("projects", projectRowIndex, statusColIdx + 1, "Terminated")
+          project.status = "Terminated"
+        }
+      }
+    }
+
     // Attach NGO name
     const ngoHeaders = ngoRows[0] || [];
     const ngoData = ngoRows.slice(1).find((row) => row[0] === project.ngo_id);
@@ -79,6 +97,24 @@ export async function PATCH(
         currentRow[index] = String(body[header] ?? "");
       }
     });
+
+    // If someone tries to set status back to Active but end_date has passed, block it
+    const statusColIdx = headers.indexOf("status")
+    const endDateColIdx = headers.indexOf("end_date")
+    if (body.status === "Active" && endDateColIdx !== -1) {
+      const endDateVal = currentRow[endDateColIdx]
+      if (endDateVal) {
+        const today2 = new Date()
+        today2.setHours(0, 0, 0, 0)
+        const endDate2 = new Date(endDateVal)
+        endDate2.setHours(0, 0, 0, 0)
+        if (endDate2 < today2) {
+          return NextResponse.json({
+            error: "Cannot reactivate an expired project. Update the end date first."
+          }, { status: 409 })
+        }
+      }
+    }
 
     await updateRow("projects", rowIndex, currentRow);
     return NextResponse.json({ message: "Project updated successfully" });
