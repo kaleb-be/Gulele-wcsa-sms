@@ -524,7 +524,7 @@ export default function ProjectDetailPage() {
                         <td className="py-3 px-2">{enr.end_date || "—"}</td>
                         <td className="py-3 px-2">{statusBadge(enr.status)}</td>
                         <td className="py-3 px-2">
-                          {enr.support_range ? enr.support_range + " ETB" : "—"}
+                          {enr.support_range ? enr.support_range + "" : "—"}
                         </td>
                       </tr>
                     ))

@@ -6,6 +6,7 @@ import useSWR from "swr";
 import toast from "react-hot-toast";
 import { Search } from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
+import NgoForm from "@/components/forms/NgoForm";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -39,55 +40,6 @@ export default function NGOsPage() {
   );
 
   const ngos = Array.isArray(ngosData) ? ngosData : [];
-
-  const [form, setForm] = useState({
-    name: "",
-    contact_person: "",
-    phone: "",
-    email: "",
-    registration_number: "",
-    status: "Active",
-    notes: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-
-  const validate = () => {
-    const errs: Record<string, string> = {};
-    if (!form.name.trim()) errs.name = "Name is required";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setSubmitting(true);
-    const promise = fetch("/api/ngos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    }).then(async (res) => {
-      if (!res.ok) throw new Error("Failed to create");
-      setShowModal(false);
-      setForm({
-        name: "",
-        contact_person: "",
-        phone: "",
-        email: "",
-        registration_number: "",
-        status: "Active",
-        notes: "",
-      });
-      mutate();
-    });
-
-    toast.promise(promise, {
-      loading: "Saving NGO...",
-      success: "NGO added successfully",
-      error: "Failed to create NGO",
-    }).finally(() => setSubmitting(false));
-  };
 
   const statusBadge = (s: string) => {
     const colors: Record<string, string> = {
@@ -218,7 +170,7 @@ export default function NGOsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4">
-            <div className="flex items-center justify-between px-6 pt-6 pb-2">
+            <div className="flex items-center justify-between px-6 pt-6 pb-2 border-b">
               <h2 className="text-lg font-bold text-gray-800">{t("ngos.add")}</h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -227,131 +179,14 @@ export default function NGOsPage() {
                 &times;
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="px-6 pb-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.name")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) =>
-                    setForm({ ...form, name: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.contactPersonLabel")}
-                </label>
-                <input
-                  type="text"
-                  value={form.contact_person}
-                  onChange={(e) =>
-                    setForm({ ...form, contact_person: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("ngos.phone")}
-                  </label>
-                  <input
-                    type="text"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {t("ngos.email")}
-                  </label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.registrationNumber")}
-                </label>
-                <input
-                  type="text"
-                  value={form.registration_number}
-                  onChange={(e) =>
-                    setForm({ ...form, registration_number: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.notes")}
-                </label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) =>
-                    setForm({ ...form, notes: e.target.value })
-                  }
-                  rows={2}
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("ngos.status")}
-                </label>
-                <select
-                  value={form.status}
-                  onChange={(e) =>
-                    setForm({ ...form, status: e.target.value })
-                  }
-                  className="border border-gray-300 rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-900 rounded-lg hover:bg-blue-800 transition-colors disabled:opacity-50"
-                >
-                  {submitting ? t("common.saving") : t("ngos.add")}
-                </button>
-              </div>
-            </form>
+            <NgoForm 
+              onSuccess={() => {
+                setShowModal(false);
+                mutate();
+              }}
+              onCancel={() => setShowModal(false)}
+              submitLabel={t("ngos.add")}
+            />
           </div>
         </div>
       )}
