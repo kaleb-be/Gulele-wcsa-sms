@@ -4,7 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import { Search, ArrowRight, CheckCircle2, AlertCircle, AlertTriangle, X } from "lucide-react";
+import {Search, ArrowRight, CheckCircle2, AlertCircle, AlertTriangle, X, Check} from "lucide-react";
 import { useLocale } from "@/components/LocaleProvider";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -119,15 +119,15 @@ export default function EnrollmentFlow() {
           return (
             <div key={s} className="flex items-center gap-1 md:gap-2">
               <div
-                className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-bold flex-shrink-0 ${
+                className={`w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-all text-xs md:text-sm border-2 font-bold flex-shrink-0 ${
                   step === s
                     ? "bg-blue-900 text-white"
                     : step > s
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-400"
+                      ? "bg-green-100 border-green-300 text-green-700"
+                      : "bg-white border-gray-300 text-gray-400"
                 }`}
               >
-                {step > s ? <CheckCircle2 size={16} /> : s}
+                {step > s ? <Check size={16} /> : s}
               </div>
               {/* Label: always visible on desktop, only visible for active step on mobile */}
               <span

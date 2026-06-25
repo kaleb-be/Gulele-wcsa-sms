@@ -1,13 +1,23 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useSession } from "next-auth/react";
+import {useEffect, useMemo, useState} from "react";
+import {useSession} from "next-auth/react";
 import * as XLSX from "xlsx";
-import { useLocale } from "@/components/LocaleProvider";
+import {useLocale} from "@/components/LocaleProvider";
 import useSWR from "swr";
 import NgoForm from "@/components/forms/NgoForm";
 import ProjectForm from "@/components/forms/ProjectForm";
-import { ChevronRight, ChevronLeft, Upload, Check, Info, AlertTriangle, X, Download, Printer } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Info,
+  Printer,
+  Upload,
+  X
+} from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -114,28 +124,28 @@ type RowStatus =
   | { type: "skip"; reason: string };
 
 export default function ImportPage() {
-  const { t } = useLocale();
-  const { data: session } = useSession();
+  const {t} = useLocale();
+  const {data: session} = useSession();
   const [step, setStep] = useState(1);
-  
+
   // Step 1 state
   const [file, setFile] = useState<File | null>(null);
   const [confirmTemplate, setConfirmTemplate] = useState(false);
   const [extractedOrgName, setExtractedOrgName] = useState("");
   const [dataRows, setDataRows] = useState<any[][]>([]);
   const [mappedRows, setMappedRows] = useState<MappedRow[]>([]);
-  
+
   // Step 2 state
   const [ngoMode, setNgoMode] = useState<"existing" | "new">("existing");
   const [selectedNgoId, setSelectedNgoId] = useState("");
   const [editedOrgName, setEditedOrgName] = useState("");
-  const { data: ngos } = useSWR("/api/ngos", fetcher);
+  const {data: ngos} = useSWR("/api/ngos", fetcher);
 
   // Step 3 state
   const [projectMode, setProjectMode] = useState<"existing" | "new">("existing");
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [selectedProject, setSelectedProject] = useState<any>(null);
-  const { data: projects } = useSWR(selectedNgoId ? `/api/projects?ngo_id=${selectedNgoId}` : null, fetcher);
+  const {data: projects} = useSWR(selectedNgoId ? `/api/projects?ngo_id=${selectedNgoId}` : null, fetcher);
 
   // Step 4 state
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -158,7 +168,7 @@ export default function ImportPage() {
   // Auto-select NGO if extracted name matches
   useEffect(() => {
     if (step === 2 && ngos && extractedOrgName && !selectedNgoId) {
-      const match = (ngos as any[]).find(n => 
+      const match = (ngos as any[]).find(n =>
         n.name.toLowerCase().includes(extractedOrgName.toLowerCase()) ||
         extractedOrgName.toLowerCase().includes(n.name.toLowerCase())
       );
@@ -181,9 +191,9 @@ export default function ImportPage() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const arrayBuffer = evt.target?.result as ArrayBuffer;
-      const wb = XLSX.read(new Uint8Array(arrayBuffer), { type: "array" });
+      const wb = XLSX.read(new Uint8Array(arrayBuffer), {type: "array"});
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+      const raw: any[][] = XLSX.utils.sheet_to_json(ws, {header: 1, defval: ""});
 
       if (raw.length < 2) {
         toast.error("File seems empty or invalid");
@@ -232,20 +242,27 @@ export default function ImportPage() {
       });
 
       const results = mappedRows.map((row, index) => {
-        if (!row.full_name?.trim()) return { row, status: { type: "skip", reason: "missing_name" } as RowStatus, index };
-        
+        if (!row.full_name?.trim()) return {row, status: {type: "skip", reason: "missing_name"} as RowStatus, index};
+
         if (!row.id_number?.trim()) {
           const nameKey = row.full_name.toLowerCase().trim().replace(/\s+/g, " ");
           const nameMatches = nameMap.get(nameKey) || [];
           if (nameMatches.length > 0) {
-            return { row, status: { type: "possible_duplicate", existingBen: nameMatches[0], matchReason: "name_match_no_id" } as RowStatus, index };
+            return {row,
+              status: {
+                type: "possible_duplicate",
+                existingBen: nameMatches[0],
+                matchReason: "name_match_no_id"
+              } as RowStatus,
+              index
+            };
           }
-          return { row, status: { type: "new" } as RowStatus, index };
+          return {row, status: {type: "new"} as RowStatus, index};
         }
 
         const idKey = `${row.id_type}::${row.id_number}`.toLowerCase();
         if (idMap.has(idKey)) {
-          return { row, status: { type: "confirmed_duplicate", existingBen: idMap.get(idKey)! } as RowStatus, index };
+          return {row, status: {type: "confirmed_duplicate", existingBen: idMap.get(idKey)!} as RowStatus, index};
         }
 
         const nameKey = row.full_name.toLowerCase().trim().replace(/\s+/g, " ");
@@ -255,10 +272,17 @@ export default function ImportPage() {
         });
 
         if (nameMatches.length > 0) {
-          return { row, status: { type: "possible_duplicate", existingBen: nameMatches[0], matchReason: "name_woreda_age_match" } as RowStatus, index };
+          return {row,
+            status: {
+              type: "possible_duplicate",
+              existingBen: nameMatches[0],
+              matchReason: "name_woreda_age_match"
+            } as RowStatus,
+            index
+          };
         }
 
-        return { row, status: { type: "new" } as RowStatus, index };
+        return {row, status: {type: "new"} as RowStatus, index};
       });
 
       setClassifications(results);
@@ -284,10 +308,10 @@ export default function ImportPage() {
 
     // Collect possible duplicates and skipped rows immediately
     // (no API calls needed for these)
-    classifications.forEach(({ row, status, index }) => {
+    classifications.forEach(({row, status, index}) => {
       const rowNum = index + 3
       if (status.type === "skip") {
-        currentResults.skipped.push({ rowNum, name: row.full_name, reason: status.reason })
+        currentResults.skipped.push({rowNum, name: row.full_name, reason: status.reason})
       } else if (status.type === "possible_duplicate") {
         currentResults.possibleDuplicates.push({
           rowNum,
@@ -318,7 +342,7 @@ export default function ImportPage() {
       try {
         const benRes = await fetch("/api/import/beneficiaries", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
             rows: newRows.map(c => c.row),
             registered_by: staffName,
@@ -328,7 +352,7 @@ export default function ImportPage() {
 
         if (!benRes.ok) {
           // If batch fails, mark all new rows as errors
-          newRows.forEach(({ row, index }) => {
+          newRows.forEach(({row, index}) => {
             currentResults.errors.push({
               rowNum: index + 3,
               name: row.full_name,
@@ -339,13 +363,13 @@ export default function ImportPage() {
           const assignedIds: string[] = benData.ben_ids || []
           newRows.forEach((c, i) => {
             if (assignedIds[i]) {
-              currentResults.created.push({ ...c.row, ben_id: assignedIds[i] })
+              currentResults.created.push({...c.row, ben_id: assignedIds[i]})
             }
           })
         }
       } catch (err: any) {
-        newRows.forEach(({ row, index }) => {
-          currentResults.errors.push({ rowNum: index + 3, name: row.full_name, message: err.message })
+        newRows.forEach(({row, index}) => {
+          currentResults.errors.push({rowNum: index + 3, name: row.full_name, message: err.message})
         })
       }
     }
@@ -375,7 +399,7 @@ export default function ImportPage() {
       try {
         const enrRes = await fetch("/api/import/enrollments", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {"Content-Type": "application/json"},
           body: JSON.stringify({
             enrollments: enrollmentsToSend,
             project_id: selectedProjectId,
@@ -391,14 +415,14 @@ export default function ImportPage() {
           const dupCount = enrData.duplicates || 0
           if (dupCount > 0) {
             for (let i = 0; i < dupCount; i++) {
-              currentResults.enrollmentsSkipped.push({ message: "Duplicate enrollment" })
+              currentResults.enrollmentsSkipped.push({message: "Duplicate enrollment"})
             }
           }
         } else {
-          currentResults.errors.push({ rowNum: 0, name: "Enrollment batch", message: enrData.error })
+          currentResults.errors.push({rowNum: 0, name: "Enrollment batch", message: enrData.error})
         }
       } catch (err: any) {
-        currentResults.errors.push({ rowNum: 0, name: "Enrollment batch", message: err.message })
+        currentResults.errors.push({rowNum: 0, name: "Enrollment batch", message: err.message})
       }
     }
 
@@ -421,7 +445,7 @@ export default function ImportPage() {
     const trimmed = String(rowDate || "").trim()
     if (trimmed.length >= 8 && !isNaN(Date.parse(trimmed))) return trimmed
     if (projectStartDate && projectStartDate.length >= 8 &&
-        !isNaN(Date.parse(projectStartDate))) return projectStartDate
+      !isNaN(Date.parse(projectStartDate))) return projectStartDate
     return new Date().toISOString().split("T")[0]
   }
 
@@ -455,7 +479,7 @@ export default function ImportPage() {
     ]
 
     const csvString = "\uFEFF" + csvRows.join("\n")
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8" })
+    const blob = new Blob([csvString], {type: "text/csv;charset=utf-8"})
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
@@ -467,7 +491,7 @@ export default function ImportPage() {
   }
 
   const summary = useMemo(() => {
-    const counts = { new: 0, confirmed: 0, possible: 0, skip: 0 };
+    const counts = {new: 0, confirmed: 0, possible: 0, skip: 0};
     classifications.forEach(c => {
       if (c.status.type === "new") counts.new++;
       else if (c.status.type === "confirmed_duplicate") counts.confirmed++;
@@ -478,99 +502,121 @@ export default function ImportPage() {
   }, [classifications]);
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4">
+    <div className="max-w-5xl mx-auto py-2 px-1 md:py-8 md:px-4">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800">{t("import.title")}</h1>
         <p className="text-gray-600 mt-2">{t("import.subtitle")}</p>
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center justify-between mb-10 overflow-x-auto pb-4 no-print">
+      <div className="flex items-center w-full mb-10 no-print px-10 md:px-32">
         {[1, 2, 3, 4].map((s) => (
-          <div key={s} className="flex items-center">
-            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
-              step >= s ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-300 text-gray-400"
-            }`}>
-              {step > s ? <Check size={20} /> : s}
+          <div key={s} className={`flex items-center ${s < 4 ? "flex-1" : ""} min-w-0`}>
+            <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+              <div
+                className={`flex items-center justify-center w-7 h-7 md:w-10 md:h-10 rounded-full border-2 transition-all text-xs md:text-sm font-bold flex-shrink-0 ${
+                  step === s
+                    ? "bg-blue-900 border-blue-800 text-white": step>s
+                  ? "bg-green-100 border-green-300 text-green-700"
+                    : "bg-white border-gray-300 text-gray-400"
+                }`}>
+                {step > s ? <Check size={16}/> : s}
+              </div>
+              <span className={`hidden md:inline whitespace-nowrap font-medium text-sm ${
+                step >= s ? "text-blue-600" : "text-gray-400"
+                  }`
+              }>
+                {t(`import.step${s}`)}
+              </span>
+              <span className={`md:hidden whitespace-nowrap font-medium text-xs ${
+                step === s ? "text-blue-600 inline" : "hidden"
+                  }`}>
+                {t(`import.step${s}`)}
+              </span>
             </div>
-            <span className={`ml-3 whitespace-nowrap font-medium ${step >= s ? "text-blue-600" : "text-gray-400"}`}>
-              {t(`import.step${s}`)}
-            </span>
-            {s < 4 && <div className={`w-12 h-0.5 mx-4 ${step > s ? "bg-blue-600" : "bg-gray-200"}`} />}
+            {s < 4 && (
+              <div className={`flex-1 h-0.5 mx-2 md:mx-3 min-w-[8px] ${
+                step > s ? "bg-blue-600" : "bg-gray-200"
+              }`}/>
+            )}
           </div>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 min-h-[400px]">
+      <div className="bg-white rounded-2xl shadow-sm md:border border-gray-100 min-h-[400px]">
         {/* Step 1: Upload */}
         {step === 1 && (
-          <div className="p-8">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-6 mb-8 flex gap-4">
-              <div className="mt-1 text-blue-600"><Info size={24} /></div>
+          <div className="md:p-8 p-1">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-2 md:p-6 mb-8  gap-4">
               <div>
-                <h3 className="font-bold text-blue-900">{t("import.templateNotice")}</h3>
+
+                <h3 className="flex items-center font-bold text-blue-900">
+                  <div className="mt-1 text-blue-600 pr-2"><Info size={24}/></div>
+                  {t("import.templateNotice")}</h3>
                 <p className="text-blue-800 text-sm mt-1">{t("import.templateDescription")}</p>
                 <div className="mt-3 overflow-x-auto rounded-lg border border-blue-200">
                   <table className="text-xs w-full border-collapse">
                     <tbody>
-                      <tr className="bg-blue-100">
-                        <td colSpan={6} className="px-2 py-1.5 font-medium text-blue-900 border border-blue-200">
-                          {t("import.templateRow1")} <span className="italic">["Organization Name): ___"]</span>
-                        </td>
-                      </tr>
-                      <tr className="bg-blue-50 font-bold text-blue-800">
-                        {["Full Name","Sex","Age","woreda","Phone","ID Number","..."].map(h => (
-                          <td key={h} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{h}</td>
-                        ))}
-                      </tr>
-                      <tr className="text-gray-500 italic">
-                        {["Amina Yusuf","Female","35","5","0911...","ET123...","..."].map((v,i) => (
-                          <td key={i} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{v}</td>
-                        ))}
-                      </tr>
-                      <tr className="text-gray-400 italic">
-                        {["Tesfaye Bekele","Male","47","3","0922...","P998...","..."].map((v,i) => (
-                          <td key={i} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{v}</td>
-                        ))}
-                      </tr>
+                    <tr className="bg-blue-100">
+                      <td colSpan={8} className="px-2 py-1.5 font-medium text-blue-900 border border-blue-200">
+                        {t("import.templateRow1")}
+                        <p className="italic">[&quot;Organization Name): ___&quot;]</p>
+                      </td>
+                    </tr>
+                    <tr className="bg-blue-50 font-bold text-blue-800">
+                      {["Full Name", "Sex", "Age", "woreda", "Phone", "ID Type", "ID Number", "..."].map(h => (
+                        <td key={h} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{h}</td>
+                      ))}
+                    </tr>
+                    <tr className="text-gray-500 italic">
+                      {["Amina Yusuf", "F", "35", "5", "0911...", "Fayda", "GU123...", "..."].map((v, i) => (
+                        <td key={i} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{v}</td>
+                      ))}
+                    </tr>
+                    <tr className="text-gray-400 italic">
+                      {["Tesfaye Bekele", "M", "47", "3", "0922...", "Kebele", "8091...", "..."].map((v, i) => (
+                        <td key={i} className="px-2 py-1 border border-blue-200 whitespace-nowrap">{v}</td>
+                      ))}
+                    </tr>
                     </tbody>
                   </table>
                 </div>
                 <label className="flex items-center mt-4 cursor-pointer group">
-                  <input 
-                    type="checkbox" 
-                    checked={confirmTemplate} 
+                  <input
+                    type="checkbox"
+                    checked={confirmTemplate}
                     onChange={e => setConfirmTemplate(e.target.checked)}
                     className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="ml-3 text-blue-900 font-medium group-hover:underline">{t("import.confirmTemplate")}</span>
+                  <span
+                    className="ml-3 text-blue-900 font-medium group-hover:underline">{t("import.confirmTemplate")}</span>
                 </label>
               </div>
             </div>
 
-            <div 
-              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all ${
+            <div
+              className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all overflow-auto ${
                 file ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200 hover:border-blue-400"
               }`}
-              style={{ minHeight: "120px" }}
+              style={{minHeight: "120px"}}
             >
-              <input 
-                type="file" 
-                accept=".xlsx, .xls" 
+              <input
+                type="file"
+                accept=".xlsx, .xls"
                 onChange={handleFileChange}
-                className="hidden" 
+                className="hidden"
                 id="fileInput"
               />
               <label htmlFor="fileInput" className="cursor-pointer flex flex-col items-center">
                 {file ? (
-                  <div className="text-green-600">
-                    <Check size={48} className="mx-auto mb-4" />
-                    <p className="font-bold text-lg">{file.name}</p>
+                  <div className="text-green-600 ">
+                    <Check size={48} className="mx-auto mb-4"/>
+                    <p className="font-bold text-lg ">{file.name}</p>
                     <p className="text-sm">{(file.size / 1024).toFixed(1)} KB</p>
                   </div>
                 ) : (
                   <div className="text-gray-500">
-                    <Upload size={48} className="mx-auto mb-4" />
+                    <Upload size={48} className="mx-auto mb-4"/>
                     <p className="font-medium text-lg">{t("import.dropzone")}</p>
                     <p className="text-sm mt-1">{t("import.acceptedFormats")}</p>
                   </div>
@@ -587,39 +633,40 @@ export default function ImportPage() {
                 <div className="overflow-x-auto border rounded-xl">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Full Name</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Category</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">ID Type</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">ID Number</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Support Range</th>
-                        <th className="px-4 py-3 text-left font-semibold text-gray-600">Woreda</th>
-                      </tr>
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Full Name</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Category</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">ID Type</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">ID Number</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Support Range</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-600">Woreda</th>
+                    </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {mappedRows.slice(0, 3).map((row, i) => (
-                        <tr key={i}>
-                          <td className="px-4 py-3">{row.full_name}</td>
-                          <td className="px-4 py-3">{row.category}</td>
-                          <td className="px-4 py-3">{row.id_type}</td>
-                          <td className="px-4 py-3">{row.id_number}</td>
-                          <td className="px-4 py-3">{row.support_range}</td>
-                          <td className="px-4 py-3">{row.woreda}</td>
-                        </tr>
-                      ))}
+                    {mappedRows.slice(0, 3).map((row, i) => (
+                      <tr key={i}>
+                        <td className="px-4 py-3">{row.full_name}</td>
+                        <td className="px-4 py-3">{row.category}</td>
+                        <td className="px-4 py-3">{row.id_type}</td>
+                        <td className="px-4 py-3">{row.id_number}</td>
+                        <td className="px-4 py-3">{row.support_range}</td>
+                        <td className="px-4 py-3">{row.woreda}</td>
+                      </tr>
+                    ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             )}
 
-            <div className="mt-8 flex justify-end">
+            <div className="mt-8 flex justify-end items-center">
+              <span className="text-sm text-gray-500 mx-2 md:mx-6">{t("import.firstNotice")}</span>
               <button
                 disabled={!file || !confirmTemplate}
                 onClick={() => setStep(2)}
                 className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
-                {t("common.next")} <ChevronRight size={20} />
+                {t("common.next")} <ChevronRight size={20}/>
               </button>
             </div>
           </div>
@@ -627,25 +674,25 @@ export default function ImportPage() {
 
         {/* Step 2: NGO */}
         {step === 2 && (
-          <div className="p-8">
+          <div className="p-2 md:p-8">
             <div className="mb-8">
               <label className="block text-sm font-bold text-gray-700 mb-2">{t("import.orgName")}</label>
               <div className="flex items-center gap-4">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editedOrgName}
                   onChange={e => setEditedOrgName(e.target.value)}
                   className="flex-1 border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
-                <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+                <span className="hidden md:flex text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
                   {extractedOrgName ? t("import.detectedOrg") : t("import.notDetected")}
                 </span>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div 
-                className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
+              <div
+                className={`p-3 md:p-6 border-2 rounded-2xl cursor-pointer transition-all ${
                   ngoMode === "existing" ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"
                 }`}
                 onClick={() => setNgoMode("existing")}
@@ -654,7 +701,7 @@ export default function ImportPage() {
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     ngoMode === "existing" ? "border-blue-600 bg-blue-600 text-white" : "border-gray-300"
                   }`}>
-                    {ngoMode === "existing" && <div className="w-2 h-2 bg-white rounded-full" />}
+                    {ngoMode === "existing" && <div className="w-2 h-2 bg-white rounded-full"/>}
                   </div>
                   <h3 className="font-bold text-gray-800">{t("import.selectExistingNgo")}</h3>
                 </div>
@@ -672,8 +719,8 @@ export default function ImportPage() {
                 )}
               </div>
 
-              <div 
-                className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
+              <div
+                className={`p-3 md:p-6 border-2 rounded-2xl cursor-pointer transition-all ${
                   ngoMode === "new" ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"
                 }`}
                 onClick={() => setNgoMode("new")}
@@ -682,15 +729,15 @@ export default function ImportPage() {
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     ngoMode === "new" ? "border-blue-600 bg-blue-600 text-white" : "border-gray-300"
                   }`}>
-                    {ngoMode === "new" && <div className="w-2 h-2 bg-white rounded-full" />}
+                    {ngoMode === "new" && <div className="w-2 h-2 bg-white rounded-full"/>}
                   </div>
                   <h3 className="font-bold text-gray-800">{t("import.registerNewNgo")}</h3>
                 </div>
                 {ngoMode === "new" && (
                   <div className="bg-white p-6 rounded-xl border">
-                    <NgoForm 
-                      compact 
-                      initialValues={{ name: editedOrgName }}
+                    <NgoForm
+                      compact
+                      initialValues={{name: editedOrgName}}
                       onSuccess={(res) => {
                         setSelectedNgoId(res.ngo_id);
                         setStep(3);
@@ -707,14 +754,14 @@ export default function ImportPage() {
                 onClick={() => setStep(1)}
                 className="text-gray-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 flex items-center gap-2"
               >
-                <ChevronLeft size={20} /> {t("common.back")}
+                <ChevronLeft size={20}/> {t("common.back")}
               </button>
               <button
                 disabled={ngoMode === "new" || !selectedNgoId}
                 onClick={() => setStep(3)}
                 className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
-                {t("common.next")} <ChevronRight size={20} />
+                {t("common.next")} <ChevronRight size={20}/>
               </button>
             </div>
           </div>
@@ -722,18 +769,21 @@ export default function ImportPage() {
 
         {/* Step 3: Project */}
         {step === 3 && (
-          <div className="p-8">
-            <div className="mb-8 p-4 bg-gray-50 rounded-xl flex justify-between items-center border">
-              <div>
+          <div className="p-2 md:p-8  overflow-auto">
+            <div
+              className="mb-8 p-2 md:p-4 bg-gray-50 rounded-xl flex justify-between items-center border overflow-auto">
+              <div className="min-w-0">
                 <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">{t("import.ngoLabel")}</p>
-                <h3 className="font-bold text-gray-800">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</h3>
+                <h3
+                  className="font-bold text-gray-800 truncate">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</h3>
               </div>
-              <button onClick={() => setStep(2)} className="text-blue-600 text-sm font-bold hover:underline">{t('import.changeNGO')}</button>
+              <button onClick={() => setStep(2)}
+                      className="text-blue-600 text-sm font-bold hover:underline">{t('import.changeNGO')}</button>
             </div>
 
             <div className="space-y-4">
-              <div 
-                className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
+              <div
+                className={`p-3 md:p-6 border-2 rounded-2xl cursor-pointer transition-all  overflow-auto  ${
                   projectMode === "existing" ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"
                 } ${projects && projects.length === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
                 onClick={() => projects && projects.length > 0 && setProjectMode("existing")}
@@ -742,7 +792,7 @@ export default function ImportPage() {
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     projectMode === "existing" ? "border-blue-600 bg-blue-600 text-white" : "border-gray-300"
                   }`}>
-                    {projectMode === "existing" && <div className="w-2 h-2 bg-white rounded-full" />}
+                    {projectMode === "existing" && <div className="w-2 h-2 bg-white rounded-full"/>}
                   </div>
                   <h3 className="font-bold text-gray-800">{t("import.selectExistingProject")}</h3>
                 </div>
@@ -772,8 +822,8 @@ export default function ImportPage() {
                 )}
               </div>
 
-              <div 
-                className={`p-6 border-2 rounded-2xl cursor-pointer transition-all ${
+              <div
+                className={`p-3 md:p-6 border-2 rounded-2xl cursor-pointer transition-all ${
                   projectMode === "new" ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:border-blue-300"
                 }`}
                 onClick={() => setProjectMode("new")}
@@ -782,14 +832,14 @@ export default function ImportPage() {
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                     projectMode === "new" ? "border-blue-600 bg-blue-600 text-white" : "border-gray-300"
                   }`}>
-                    {projectMode === "new" && <div className="w-2 h-2 bg-white rounded-full" />}
+                    {projectMode === "new" && <div className="w-2 h-2 bg-white rounded-full"/>}
                   </div>
                   <h3 className="font-bold text-gray-800">{t("import.registerNewProject")}</h3>
                 </div>
                 {projectMode === "new" && (
                   <div className="bg-white p-6 rounded-xl border">
-                    <ProjectForm 
-                      compact 
+                    <ProjectForm
+                      compact
                       ngo_id={selectedNgoId}
                       onSuccess={(res) => {
                         setSelectedProjectId(res.project_id);
@@ -808,14 +858,14 @@ export default function ImportPage() {
                 onClick={() => setStep(2)}
                 className="text-gray-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 flex items-center gap-2"
               >
-                <ChevronLeft size={20} /> {t("common.back")}
+                <ChevronLeft size={20}/> {t("common.back")}
               </button>
               <button
                 disabled={projectMode === "new" || !selectedProjectId}
                 onClick={startAnalysis}
                 className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
               >
-                {t("common.next")} <ChevronRight size={20} />
+                {t("common.next")} <ChevronRight size={20}/>
               </button>
             </div>
           </div>
@@ -823,10 +873,11 @@ export default function ImportPage() {
 
         {/* Step 4: Review & Import */}
         {step === 4 && (
-          <div className="p-8">
+          <div className="p-2 md:p-8 overflow-auto">
             {isAnalyzing ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                <div
+                  className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"/>
                 <p className="text-lg font-bold text-gray-700">Analyzing data for duplicates...</p>
               </div>
             ) : results ? (
@@ -839,18 +890,19 @@ export default function ImportPage() {
                   </div>
                 )}
                 <div className="mb-8 border-b pb-6 text-center">
-                  <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check size={40} />
+                  <div
+                    className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check size={40}/>
                   </div>
                   <h2 className="text-2xl font-bold text-gray-800">{t("import.resultsTitle")}</h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                  <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 overflow-auto">
+                  <div className="p-4 bg-green-50 rounded-xl border border-green-100 overflow-auto">
                     <p className="text-2xl font-bold text-green-700">{results.created.length}</p>
                     <p className="text-sm text-green-800">{t("import.beneficiariesRegistered")}</p>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-xl border border-green-100">
+                  <div className="p-4 bg-green-50 rounded-xl border border-green-100 overflow-auto">
                     <p className="text-2xl font-bold text-green-700">{results.enrollmentsCreated}</p>
                     <p className="text-sm text-green-800">{t("import.enrollmentsCreated")}</p>
                   </div>
@@ -874,38 +926,39 @@ export default function ImportPage() {
 
                 {/* Confirmed Duplicates Table */}
                 <details className="mb-4 bg-white border rounded-xl overflow-hidden group">
-                  <summary className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
+                  <summary
+                    className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Info size={18} className="text-blue-500" />
+                      <Info size={18} className="text-blue-500"/>
                       {t("import.confirmedDuplicatesSection")} ({results.confirmedDuplicates.length})
                     </div>
-                    <ChevronRight size={20} className="group-open:rotate-90 transition-transform" />
+                    <ChevronRight size={20} className="group-open:rotate-90 transition-transform"/>
                   </summary>
                   <div className="p-4 border-t overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b">
-                        <tr>
-                          <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
-                          <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
-                          <th className="px-3 py-2 text-left">{t("import.matchedTo")} (ben_id)</th>
-                          <th className="px-3 py-2 text-left">{t("import.enrollmentStatus")}</th>
-                        </tr>
+                      <tr>
+                        <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
+                        <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
+                        <th className="px-3 py-2 text-left">{t("import.matchedTo")} (ben_id)</th>
+                        <th className="px-3 py-2 text-left">{t("import.enrollmentStatus")}</th>
+                      </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {results.confirmedDuplicates.map((d, i) => (
-                          <tr key={i}>
-                            <td className="px-3 py-2">{d.rowNum}</td>
-                            <td className="px-3 py-2 font-medium">{d.name}</td>
-                            <td className="px-3 py-2 text-gray-500">{d.ben_id}</td>
-                            <td className="px-3 py-2">
-                              {d.status === "enrolled" ? (
-                                <span className="text-green-600 font-medium">{t("import.enrolled")}</span>
-                              ) : (
-                                <span className="text-amber-600 font-medium">{t("import.alreadyEnrolled")}</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
+                      {results.confirmedDuplicates.map((d, i) => (
+                        <tr key={i}>
+                          <td className="px-3 py-2">{d.rowNum}</td>
+                          <td className="px-3 py-2 font-medium">{d.name}</td>
+                          <td className="px-3 py-2 text-gray-500">{d.ben_id}</td>
+                          <td className="px-3 py-2">
+                            {d.status === "enrolled" ? (
+                              <span className="text-green-600 font-medium">{t("import.enrolled")}</span>
+                            ) : (
+                              <span className="text-amber-600 font-medium">{t("import.alreadyEnrolled")}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
                       </tbody>
                     </table>
                   </div>
@@ -913,38 +966,39 @@ export default function ImportPage() {
 
                 {/* Possible Duplicates Table */}
                 <details className="mb-4 bg-white border rounded-xl overflow-hidden group">
-                  <summary className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
+                  <summary
+                    className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle size={18} className="text-amber-500" />
+                      <AlertTriangle size={18} className="text-amber-500"/>
                       {t("import.possibleDuplicatesSection")} ({results.possibleDuplicates.length})
                     </div>
-                    <ChevronRight size={20} className="group-open:rotate-90 transition-transform" />
+                    <ChevronRight size={20} className="group-open:rotate-90 transition-transform"/>
                   </summary>
                   <div className="p-4 border-t overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b">
-                        <tr>
-                          <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
-                          <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
-                          <th className="px-3 py-2 text-left">{t("registerForm.idNumber")}</th>
-                          <th className="px-3 py-2 text-left">{t("registerForm.age")}</th>
-                          <th className="px-3 py-2 text-left">{t("registerForm.woreda")}</th>
-                          <th className="px-3 py-2 text-left">{t("import.matchReason")}</th>
-                          <th className="px-3 py-2 text-left">{t("import.matchedTo")}</th>
-                        </tr>
+                      <tr>
+                        <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
+                        <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
+                        <th className="px-3 py-2 text-left">{t("registerForm.idNumber")}</th>
+                        <th className="px-3 py-2 text-left">{t("registerForm.age")}</th>
+                        <th className="px-3 py-2 text-left">{t("registerForm.woreda")}</th>
+                        <th className="px-3 py-2 text-left">{t("import.matchReason")}</th>
+                        <th className="px-3 py-2 text-left">{t("import.matchedTo")}</th>
+                      </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {results.possibleDuplicates.map((d, i) => (
-                          <tr key={i}>
-                            <td className="px-3 py-2">{d.rowNum}</td>
-                            <td className="px-3 py-2 font-medium">{d.full_name}</td>
-                            <td className="px-3 py-2">{d.id_number}</td>
-                            <td className="px-3 py-2">{d.age}</td>
-                            <td className="px-3 py-2">{d.woreda}</td>
-                            <td className="px-3 py-2 text-amber-600">{t(`import.matchReason_${d.match_reason}`)}</td>
-                            <td className="px-3 py-2">{d.matched_name} ({d.matched_ben_id})</td>
-                          </tr>
-                        ))}
+                      {results.possibleDuplicates.map((d, i) => (
+                        <tr key={i}>
+                          <td className="px-3 py-2">{d.rowNum}</td>
+                          <td className="px-3 py-2 font-medium">{d.full_name}</td>
+                          <td className="px-3 py-2">{d.id_number}</td>
+                          <td className="px-3 py-2">{d.age}</td>
+                          <td className="px-3 py-2">{d.woreda}</td>
+                          <td className="px-3 py-2 text-amber-600">{t(`import.matchReason_${d.match_reason}`)}</td>
+                          <td className="px-3 py-2">{d.matched_name} ({d.matched_ben_id})</td>
+                        </tr>
+                      ))}
                       </tbody>
                     </table>
                   </div>
@@ -953,30 +1007,31 @@ export default function ImportPage() {
                 {/* Errors Table */}
                 {results.errors.length > 0 && (
                   <details className="mb-4 bg-white border rounded-xl overflow-hidden group">
-                    <summary className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
+                    <summary
+                      className="p-4 font-bold text-gray-800 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <X size={18} className="text-red-500" />
+                        <X size={18} className="text-red-500"/>
                         {t("import.errorsSection")} ({results.errors.length})
                       </div>
-                      <ChevronRight size={20} className="group-open:rotate-90 transition-transform" />
+                      <ChevronRight size={20} className="group-open:rotate-90 transition-transform"/>
                     </summary>
                     <div className="p-4 border-t overflow-x-auto">
                       <table className="w-full text-sm text-red-600">
                         <thead className="bg-red-50 border-b">
-                          <tr>
-                            <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
-                            <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
-                            <th className="px-3 py-2 text-left">{t("import.errorMessage")}</th>
-                          </tr>
+                        <tr>
+                          <th className="px-3 py-2 text-left">{t("import.rowNum")}</th>
+                          <th className="px-3 py-2 text-left">{t("registerForm.fullName")}</th>
+                          <th className="px-3 py-2 text-left">{t("import.errorMessage")}</th>
+                        </tr>
                         </thead>
                         <tbody className="divide-y">
-                          {results.errors.map((e, i) => (
-                            <tr key={i}>
-                              <td className="px-3 py-2 font-bold">{e.rowNum}</td>
-                              <td className="px-3 py-2">{e.name}</td>
-                              <td className="px-3 py-2 font-medium">{e.message}</td>
-                            </tr>
-                          ))}
+                        {results.errors.map((e, i) => (
+                          <tr key={i}>
+                            <td className="px-3 py-2 font-bold">{e.rowNum}</td>
+                            <td className="px-3 py-2">{e.name}</td>
+                            <td className="px-3 py-2 font-medium">{e.message}</td>
+                          </tr>
+                        ))}
                         </tbody>
                       </table>
                     </div>
@@ -988,13 +1043,13 @@ export default function ImportPage() {
                     onClick={downloadPossibleDuplicates}
                     className="flex-1 bg-amber-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-700 flex items-center justify-center gap-2"
                   >
-                    <Download size={20} /> {t("import.downloadPossibleDuplicates")}
+                    <Download size={20}/> {t("import.downloadPossibleDuplicates")}
                   </button>
                   <button
                     onClick={() => window.print()}
                     className="flex-1 bg-gray-800 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-900 flex items-center justify-center gap-2"
                   >
-                    <Printer size={20} /> {t("import.printReport")}
+                    <Printer size={20}/> {t("import.printReport")}
                   </button>
                 </div>
 
@@ -1030,12 +1085,16 @@ export default function ImportPage() {
                   <div className="mb-8 bg-gray-50 p-6 rounded border">
                     <h3 className="font-bold mb-4 border-b">Summary</h3>
                     <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      <p>NGO:</p> <p className="font-bold">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</p>
-                      <p>Project:</p> <p className="font-bold">{(projects as any[]).find(p => p.project_id === selectedProjectId)?.project_title}</p>
+                      <p>NGO:</p> <p
+                      className="font-bold">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</p>
+                      <p>Project:</p> <p
+                      className="font-bold">{(projects as any[]).find(p => p.project_id === selectedProjectId)?.project_title}</p>
                       <p>New Beneficiaries Created:</p> <p className="font-bold">{results.created.length}</p>
                       <p>Enrollments Created:</p> <p className="font-bold">{results.enrollmentsCreated}</p>
-                      <p>Confirmed Duplicates Matched:</p> <p className="font-bold">{results.confirmedDuplicates.length}</p>
-                      <p>Possible Duplicates Skipped:</p> <p className="font-bold">{results.possibleDuplicates.length}</p>
+                      <p>Confirmed Duplicates Matched:</p> <p
+                      className="font-bold">{results.confirmedDuplicates.length}</p>
+                      <p>Possible Duplicates Skipped:</p> <p
+                      className="font-bold">{results.possibleDuplicates.length}</p>
                       <p>Errors Occurred:</p> <p className="font-bold">{results.errors.length}</p>
                     </div>
                   </div>
@@ -1043,24 +1102,24 @@ export default function ImportPage() {
                   <h3 className="font-bold mb-4 border-b">Possible Duplicates (Requires Review)</h3>
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr className="border-b-2">
-                        <th className="text-left py-2 px-1">Row</th>
-                        <th className="text-left py-2 px-1">Name</th>
-                        <th className="text-left py-2 px-1">ID</th>
-                        <th className="text-left py-2 px-1">Match Reason</th>
-                        <th className="text-left py-2 px-1">Matched To</th>
-                      </tr>
+                    <tr className="border-b-2">
+                      <th className="text-left py-2 px-1">Row</th>
+                      <th className="text-left py-2 px-1">Name</th>
+                      <th className="text-left py-2 px-1">ID</th>
+                      <th className="text-left py-2 px-1">Match Reason</th>
+                      <th className="text-left py-2 px-1">Matched To</th>
+                    </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-300">
-                      {results.possibleDuplicates.map((d, i) => (
-                        <tr key={i}>
-                          <td className="py-2 px-1">{d.rowNum}</td>
-                          <td className="py-2 px-1 font-bold">{d.full_name}</td>
-                          <td className="py-2 px-1">{d.id_number}</td>
-                          <td className="py-2 px-1">{t(`import.matchReason_${d.match_reason}`)}</td>
-                          <td className="py-2 px-1">{d.matched_name}</td>
-                        </tr>
-                      ))}
+                    {results.possibleDuplicates.map((d, i) => (
+                      <tr key={i}>
+                        <td className="py-2 px-1">{d.rowNum}</td>
+                        <td className="py-2 px-1 font-bold">{d.full_name}</td>
+                        <td className="py-2 px-1">{d.id_number}</td>
+                        <td className="py-2 px-1">{t(`import.matchReason_${d.match_reason}`)}</td>
+                        <td className="py-2 px-1">{d.matched_name}</td>
+                      </tr>
+                    ))}
                     </tbody>
                   </table>
                 </div>
@@ -1070,7 +1129,7 @@ export default function ImportPage() {
               <div className="flex flex-col items-center justify-center py-20 px-8">
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{t("import.importing")}</h2>
                 <div className="flex items-center gap-3 mt-4">
-                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/>
                   <p className="font-bold text-blue-600 text-lg">{importStatus}</p>
                 </div>
                 <p className="mt-2 text-gray-500 text-sm">Please wait, this may take a moment...</p>
@@ -1081,36 +1140,43 @@ export default function ImportPage() {
                 <h2 className="text-xl font-bold text-gray-800 mb-6">{t("import.reviewTitle")}</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                  <div className="p-4 bg-gray-50 rounded-xl border flex justify-between items-center">
+                  <div className="p-4 bg-gray-50 rounded-xl border flex justify-between items-center overflow-auto">
                     <div>
                       <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">{t("import.ngoLabel")}</p>
-                      <h3 className="font-bold text-gray-800">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</h3>
+                      <h3
+                        className="font-bold text-gray-800">{(ngos as any[]).find(n => n.ngo_id === selectedNgoId)?.name}</h3>
                     </div>
                   </div>
-                  <div className="p-4 bg-gray-50 rounded-xl border flex justify-between items-center">
+                  <div className="p-4 bg-gray-50 rounded-xl border flex justify-between items-center overflow-auto">
                     <div>
-                      <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">{t("import.projectLabel")}</p>
-                      <h3 className="font-bold text-gray-800">{(projects as any[]).find(p => p.project_id === selectedProjectId)?.project_title}</h3>
+                      <p
+                        className="text-xs text-gray-500 uppercase font-bold tracking-wider">{t("import.projectLabel")}</p>
+                      <h3
+                        className="font-bold text-gray-800">{(projects as any[]).find(p => p.project_id === selectedProjectId)?.project_title}</h3>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4 mb-10">
-                  <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl text-green-800">
-                    <Check size={20} className="text-green-600" />
+                  <div
+                    className="flex items-center gap-3 p-4 bg-green-50 border border-green-100 rounded-xl text-green-800">
+                    <Check size={20} className="text-green-600"/>
                     <span className="font-bold">{summary.new}</span> {t("import.newRows")}
                   </div>
-                  <div className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-800">
-                    <Info size={20} className="text-blue-600" />
+                  <div
+                    className="flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-800">
+                    <Info size={20} className="text-blue-600"/>
                     <span className="font-bold">{summary.confirmed}</span> {t("import.confirmedDuplicateRows")}
                   </div>
-                  <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800">
-                    <AlertTriangle size={20} className="text-amber-600" />
+                  <div
+                    className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-100 rounded-xl text-amber-800">
+                    <AlertTriangle size={20} className="text-amber-600"/>
                     <span className="font-bold">{summary.possible}</span> {t("import.possibleDuplicateRows")}
                   </div>
                   {summary.skip > 0 && (
-                    <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-800">
-                      <X size={20} className="text-red-600" />
+                    <div
+                      className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-800">
+                      <X size={20} className="text-red-600"/>
                       <span className="font-bold">{summary.skip}</span> {t("import.skipRows")}
                     </div>
                   )}
@@ -1121,7 +1187,7 @@ export default function ImportPage() {
                     onClick={() => setStep(3)}
                     className="text-gray-600 px-6 py-3 rounded-xl font-bold hover:bg-gray-100 flex items-center gap-2"
                   >
-                    <ChevronLeft size={20} /> {t("common.back")}
+                    <ChevronLeft size={20}/> {t("common.back")}
                   </button>
                   <button
                     onClick={startImport}
@@ -1137,12 +1203,26 @@ export default function ImportPage() {
       </div>
 
       <style jsx global>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; }
-          .max-w-5xl { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
-          .bg-white { box-shadow: none !important; border: none !important; }
-        }
+          @media print {
+              .no-print {
+                  display: none !important;
+              }
+
+              body {
+                  background: white !important;
+              }
+
+              .max-w-5xl {
+                  max-width: 100% !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+              }
+
+              .bg-white {
+                  box-shadow: none !important;
+                  border: none !important;
+              }
+          }
       `}</style>
     </div>
   );

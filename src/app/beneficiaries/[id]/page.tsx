@@ -195,7 +195,7 @@ export default function BeneficiaryProfile() {
             <ArrowLeft size={24} className="text-gray-600" />
           </button>
           <h1 className="text-2xl font-bold text-gray-800">
-            {t("beneficiaries.title")}: <span className="text-blue-600">{beneficiary.full_name}</span>
+            {t("beneficiaries.titleSingle")}: <span className="text-blue-600">{beneficiary.full_name}</span>
           </h1>
         </div>
         <div className="flex flex-row flex-wrap justify-center sm:justify-end gap-3 w-full sm:w-auto">
