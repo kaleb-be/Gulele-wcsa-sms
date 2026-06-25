@@ -15,11 +15,28 @@ const ethiopic = Noto_Sans_Ethiopic({
   variable: "--font-ethiopic",
 });
 
+export const viewport = {
+  themeColor: "#1e3a8a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+}
+
 export const metadata: Metadata = {
   title: "WCS Office - Support Management System",
   description: "Women, Children and Social Affairs Office — Gullele Sub-City",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "WCSA Office",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   icons: {
     icon: "/favicon.png",
+    apple: "/icons/icon-192x192.png",
   },
 };
 
