@@ -315,7 +315,7 @@
     "step4": "Import",
     "templateNotice": "Template format required",
     "templateDescription": "This importer supports the WCSA office beneficiary registration template. The organization name must be in the first row and column headers in the second row.",
-    "templateRow1": "Row 1 — Title row with organization name:",
+    "templateRow1": "Row 1 — Title row with organization name on the second line:",
     "confirmTemplate": "I confirm this file uses the WCSA office template format",
     "dropzone": "Click to browse or drag and drop your Excel file here",
     "acceptedFormats": "Accepted: .xlsx, .xls",
@@ -365,6 +365,7 @@
     "enrolled": "Enrolled",
     "alreadyEnrolled": "Already enrolled",
     "matchReason": "Match reason",
-    "errorMessage": "Error"
+    "errorMessage": "Error",
+    "firstNotice": "Upload the excel file and check the 'Template format` to continue."
   }
 }

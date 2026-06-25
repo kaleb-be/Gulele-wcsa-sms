@@ -37,6 +37,7 @@
   },
   "beneficiaries": {
     "title": "ተረጂዎች",
+    "titleSingle": "የተረጂ ስም",
     "register": "ተረጂ መዝግብ",
     "searchPlaceholder": "በስም፣ መታወቂያ ወይም ስልክ ይፈልጉ...",
     "allCategories": "ሁሉም ምድቦች",
@@ -47,7 +48,7 @@
     "category": "ምድብ",
     "kebele": "ቀበሌ",
     "status": "ሁኔታ",
-    "action": "እርምጃ",
+    "action": "ሌሎች",
     "view": "ዝርዝር መረጃ",
     "noResults": "ምንም ተረጂ አልተገኘም።",
     "categories": {
@@ -106,7 +107,7 @@
     "name": "ስም",
     "contactPerson": "ተወካይ",
     "status": "ሁኔታ",
-    "action": "እርምጃ",
+    "action": "",
     "view": "ይመልከቱ",
     "noResults": "ምንም ድርጅት አልተገኙም።",
     "contactPersonLabel": "የተወካይ ስም",
@@ -142,7 +143,7 @@
     "dates": "ቀናት",
     "ongoing": "በሂደት ላይ",
     "status": "ሁኔታ",
-    "action": "እርምጃ",
+    "action": "ሌሎች",
     "view": "ዝርዝር መረጃ",
     "terminate": "አቁም",
     "edit": "መረጃ ቀይር",
@@ -214,7 +215,7 @@
     "description": "መግለጫ",
     "date": "ቀን",
     "status": "ሁኔታ",
-    "actions": "እርምጃዎች",
+    "actions": "ሌሎችዎች",
     "noRecords": "መዝገቦች አልተገኙም።",
     "addBudgetRecord": "የበጀት መዝገብ ጨምር",
     "selectProject": "ፕሮጀክት ይምረጡ",
@@ -304,7 +305,7 @@
     "aoiCategory": "AOI ምድብ",
     "startDate": "የጀመረበት ቀን",
     "status": "ሁኔታ",
-    "action": "እርምጃ"
+    "action": "ሌሎች"
   },
   "import": {
     "title": "የተረጂ መረጃ አስገባ",
@@ -315,7 +316,7 @@
     "step4": "አስገባ",
     "templateNotice": "የቅጽ ቴምፕሌት ያስፈልጋል",
     "templateDescription": "ይህ ማስገቢያ የ ጉ.ሴ.ህ.ማ. ቢሮ የቅጽ ቴምፕሌት ይጠቀማል። የድርጅቱ ስም በመጀመሪያ ረድፍ እና ርዕሶች በሁለተኛ ረድፍ ሊኖሩ ያስፈልጋል።",
-    "templateRow1": "ረድፍ 1 — የድርጅቱ ስም ያለበት ርዕስ ረድፍ:",
+    "templateRow1": "ረድፍ 1 — 2ኛ መስመር ላይ የድርጅቱ ስም ያለበት ርዕስ ረድፍ:",
     "confirmTemplate": "ይህ ፋይል የ ጉ.ሴ.ህ.ማ. ቢሮ ቅጽ ቴምፕሌት እንደሚጠቀም እርግጠኛ ኖት።",
     "dropzone": "Excel ፋይልዎን ለመምረጥ ይጫኑ",
     "acceptedFormats": "የተፈቅዱ ፋይል አይነቶች: .xlsx, .xls",
@@ -342,7 +343,7 @@
     "importing": "በማስገባት ላይ...",
     "progressStart": "ረድፍ ",
     "progressMiddle": " ከ",
-    "resultsTitle": "ማስገባት ተጠናቋል",
+    "resultsTitle": "ምዝገባ ተጠናቋል",
     "beneficiariesRegistered": "አዲስ ተረጂዎች ተመዝግበዋል",
     "enrollmentsCreated": "ምዝገባዎች ተፈጥረዋል",
     "confirmedDuplicates": "የተረጋገጡ ተደጋጋሚ መረጃዎች ወዳሉ መዝገቦች ተሳስረዋል",
@@ -351,7 +352,7 @@
     "enrollmentsSkipped": "ምዝገባዎች ተዘልለዋል (አስቀድሞ ተመዝግቧል)",
     "errorsOccurred": "ስህተቶች",
     "confirmedDuplicatesSection": "የተረጋገጡ ዳግም የተመዘገቡ",
-    "possibleDuplicatesSection": "ሊሆኑ የሚችሉ ዳግም የተመዘገቡ — የእጅ ክለሳ ያስፈልጋል",
+    "possibleDuplicatesSection": "ዳግም የተመዘገቡ ሊሆኑ የሚችሉ : የእጅ ክለሳ ያስፈልጋል",
     "errorsSection": "ስህተቶች",
     "matchReason_name_match_no_id": "ተመሳሳይ ስም፣ ለማረጋገጥ መታወቂያ የለም",
     "matchReason_name_woreda_age_match": "ተመሳሳይ ስም፣ ወረዳ እና አቻ ዕድሜ",
@@ -365,6 +366,7 @@
     "enrolled": "ተመዝግቧል",
     "alreadyEnrolled": "አስቀድሞ ተመዝግቧል",
     "matchReason": "የዛምድ ምክንያት",
-    "errorMessage": "ስህተት"
+    "errorMessage": "ስህተት",
+    "firstNotice": "ለመቀጠል ፋይል መጫን እና የቅጽ ቴምፕሌት ማረጋገጫ መብራቱን ያረጋግጡ።"
   }
 }
