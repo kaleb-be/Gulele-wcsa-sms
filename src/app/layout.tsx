@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import enMessages from "@/messages/en.json";
 import amMessages from "@/messages/am.json";
 import { LocaleProvider } from "@/components/LocaleProvider";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 const ethiopic = Noto_Sans_Ethiopic({
@@ -69,6 +70,7 @@ export default async function RootLayout({
             <main className="max-w-7xl mx-auto px-4 py-6">{children}</main>
           </AuthSessionProvider>
         </LocaleProvider>
+        <SpeedInsights />
         <Analytics />
       </body>
     </html>
